@@ -1786,4 +1786,17 @@ prepareMonochromeHeads();
 #paper .doc-title,#paper .menugrid .number,#paper .menugrid .dish,#paper .menugrid .dish:not(:focus){background:linear-gradient(176deg,#fff0b0 0%,#ebc454 30%,#fff2bd 46%,#e6bc49 57%,#f5d775 100%)!important;background-clip:text!important;-webkit-background-clip:text!important;color:transparent!important;-webkit-text-fill-color:transparent!important;text-shadow:none!important}
 }
 }
-</style></body></html>
+</style><script id="stableArtworkLayout">
+(()=>{
+ const key='menu-artwork-wide-layout-v1';
+ if(localStorage.getItem(key))return;
+ const p=state.artworkPositions;
+ const initial=!p||Math.abs((p.left?.x||0)+(state.style.headX||0))<2&&Math.abs((p.right?.x||0)-(state.style.headX||0))<2;
+ if(initial){
+  localStorage.setItem(key+'-backup',JSON.stringify(state.artworkPositions||null));
+  state.artworkPositions={left:{x:-230,y:state.style.headY||0},right:{x:230,y:state.style.headY||0},year:{x:790,y:72}};
+  sync();persist();
+ }
+ localStorage.setItem(key,'applied');
+})();
+</script></body></html>
