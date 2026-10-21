@@ -1249,6 +1249,7 @@ function fitMenuText(){
    if(dish){
      content.style.display='block';content.style.height='auto';content.style.flex='0 0 auto';
      dish.style.marginBottom='0';
+     dish.style.textAlign='center';
      menus.push({content,dish,desc,height,width});
    }else labels.push({content,height,width,number:content.querySelector('.number')});
  });
@@ -1268,8 +1269,8 @@ function fitMenuText(){
  let scale=1,result=measure(1);
  if(!result.ok){let low=0,high=1;for(let i=0;i<16;i++){const mid=(low+high)/2;if(measure(mid).ok)low=mid;else high=mid}scale=low;result=measure(scale)}
  menus.forEach(cell=>{
-   cell.content.style.display='grid';cell.content.style.height=cell.height+'px';
-   cell.content.style.gridTemplateRows=result.headingHeight+'px minmax(0,1fr)';
+   cell.content.style.display='grid';cell.content.style.height='auto';
+   cell.content.style.gridTemplateRows='auto auto';
    cell.content.style.rowGap=3*scale+'px';
    cell.desc.style.alignSelf='start';
    cell.desc.style.textAlign='center';
