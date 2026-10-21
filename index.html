@@ -1256,7 +1256,7 @@ function fitMenuText(){
    let headingHeight=0,ok=true;
    menus.forEach(cell=>{
      // Keep menu headings identical across all five plans; fit descriptions only.
-     cell.dish.style.fontSize=state.style.menuTitleSize+'px';
+     cell.dish.style.fontSize=(state.style.menuTitleSize-1)+'px';
      cell.desc.style.fontSize=state.style.bodySize*scale+'px';
      headingHeight=Math.max(headingHeight,cell.dish.offsetHeight);
    });
