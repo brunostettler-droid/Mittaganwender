@@ -1256,7 +1256,7 @@ function fitMenuText(){
    let headingHeight=0,ok=true;
    menus.forEach(cell=>{
      // Keep menu headings identical across all five plans; fit descriptions only.
-     cell.dish.style.fontSize=(state.style.menuTitleSize-1)+'px';
+     cell.dish.style.fontSize=(state.style.menuTitleSize-2)+'px';
      cell.desc.style.fontSize=state.style.bodySize*scale+'px';
      headingHeight=Math.max(headingHeight,cell.dish.offsetHeight);
    });
@@ -1271,6 +1271,7 @@ function fitMenuText(){
    cell.content.style.display='grid';cell.content.style.height=cell.height+'px';
    cell.content.style.gridTemplateRows=result.headingHeight+'px minmax(0,1fr)';
    cell.content.style.rowGap=6*scale+'px';
+   cell.desc.style.alignSelf='center';
  });
  function fitLabels(scale){
    labels.forEach(cell=>{cell.number.style.fontSize=25*scale+'px';cell.content.style.fontSize=12*scale+'px'});
