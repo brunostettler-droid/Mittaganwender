@@ -1261,7 +1261,7 @@ function fitMenuText(){
      headingHeight=Math.max(headingHeight,cell.dish.offsetHeight);
    });
    menus.forEach(cell=>{
-     if(headingHeight+6*scale+cell.desc.offsetHeight>cell.height||cell.dish.scrollWidth>cell.width||cell.desc.scrollWidth>cell.width)ok=false;
+     if(headingHeight+3*scale+cell.desc.offsetHeight>cell.height||cell.dish.scrollWidth>cell.width||cell.desc.scrollWidth>cell.width)ok=false;
    });
    return {headingHeight,ok};
  }
@@ -1270,8 +1270,8 @@ function fitMenuText(){
  menus.forEach(cell=>{
    cell.content.style.display='grid';cell.content.style.height=cell.height+'px';
    cell.content.style.gridTemplateRows=result.headingHeight+'px minmax(0,1fr)';
-   cell.content.style.rowGap=6*scale+'px';
-   cell.desc.style.alignSelf='center';
+   cell.content.style.rowGap=3*scale+'px';
+   cell.desc.style.alignSelf='start';
    cell.desc.style.textAlign='center';
  });
  function fitLabels(scale){
