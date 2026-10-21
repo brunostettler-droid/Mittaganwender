@@ -1272,6 +1272,7 @@ function fitMenuText(){
    cell.content.style.gridTemplateRows=result.headingHeight+'px minmax(0,1fr)';
    cell.content.style.rowGap=6*scale+'px';
    cell.desc.style.alignSelf='center';
+   cell.desc.style.textAlign='center';
  });
  function fitLabels(scale){
    labels.forEach(cell=>{cell.number.style.fontSize=25*scale+'px';cell.content.style.fontSize=12*scale+'px'});
