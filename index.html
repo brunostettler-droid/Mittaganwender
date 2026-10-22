@@ -1250,13 +1250,14 @@ function fitMenuText(){
      content.style.display='block';content.style.height='auto';content.style.flex='0 0 auto';
      frame.style.justifyContent='flex-start';
      dish.style.whiteSpace='nowrap';
+     dish.style.letterSpacing='-0.3px';
      dish.style.marginBottom='0';
      dish.style.textAlign='center';
      menus.push({content,dish,desc,height,width});
    }else labels.push({content,height,width,number:content.querySelector('.number')});
  });
  // Share the largest heading size that keeps every title on one line.
- let headingSize=state.style.menuTitleSize-2;
+ let headingSize=state.style.menuTitleSize-1;
  menus.forEach(cell=>{
    cell.dish.style.fontSize=headingSize+'px';
    if(cell.dish.scrollWidth>cell.width){
@@ -1270,7 +1271,7 @@ function fitMenuText(){
    menus.forEach(cell=>{
      // Keep menu headings identical across all five plans; fit descriptions only.
      cell.dish.style.fontSize=headingSize+'px';
-     cell.desc.style.fontSize=state.style.bodySize*scale+'px';
+     cell.desc.style.fontSize=(state.style.bodySize-1)*scale+'px';
      headingHeight=Math.max(headingHeight,cell.dish.offsetHeight);
    });
    menus.forEach(cell=>{
