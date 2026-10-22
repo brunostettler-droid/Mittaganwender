@@ -1259,7 +1259,8 @@ function fitMenuText(){
        for(const [titlePattern,bodyPattern] of ingredients){
          if(new RegExp('\\b'+titlePattern+'\\b','i').test(dish.textContent))value=value.replace(new RegExp('\\b'+bodyPattern+'\\b','gi'),'');
        }
-       value=value.replace(/\bmit\s*(?:,|·)/gi,',').replace(/\bmit\s+und\b/gi,'mit').replace(/\bund\s*(?=[,.;]|$)/gi,'').replace(/^[\s,·]+/,'').replace(/\s+([,.;])/g,'$1').replace(/[ \t]{2,}/g,' ').trim();
+       value=value.replace(/\bmit\s*(?:,|·)\s*/gi,'mit ').replace(/\bmit\s+und\b/gi,'mit').replace(/\bund\s*(?=[,.;]|$)/gi,'').replace(/^[\s,·]+/,'').replace(/\s+([,.;])/g,'$1').replace(/[ \t]{2,}/g,' ').trim();
+       value=value.replace(/\bmit\s+und\b/gi,'mit').replace(/\b(?:mit|und)\s*$/gi,'').replace(/^Gebratene\s+(?=mit\b|an\b)/i,'Gebraten ').replace(/\bfrischen Chili\b/g,'frischen Chilis').replace(/Thai Gemüse/g,'Thai-Gemüse').trim();
        if(value)desc.textContent=value.charAt(0).toUpperCase()+value.slice(1);
      }
      dish.style.textAlign='center';
