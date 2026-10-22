@@ -1252,6 +1252,16 @@ function fitMenuText(){
      dish.style.whiteSpace='nowrap';
      dish.style.letterSpacing='-0.3px';
      dish.style.marginBottom='0';
+     // Avoid repeating the protein already named in the heading.
+     if(desc){
+       let value=desc.textContent;
+       const ingredients=[['Rind(?:fleisch)?','Rind(?:fleisch)?'],['Schwein(?:efleisch)?','Schwein(?:efleisch)?'],['Fisch(?:filets?)?','Fisch(?:filets?)?'],['Poulet','Poulet'],['Crevetten','Crevetten'],['Entenbrust','Entenbrust'],['Tofu','Tofu(?:würfelchen)?']];
+       for(const [titlePattern,bodyPattern] of ingredients){
+         if(new RegExp('\\b'+titlePattern+'\\b','i').test(dish.textContent))value=value.replace(new RegExp('\\b'+bodyPattern+'\\b','gi'),'');
+       }
+       value=value.replace(/\bmit\s*(?:,|·)/gi,',').replace(/\bmit\s+und\b/gi,'mit').replace(/\bund\s*(?=[,.;]|$)/gi,'').replace(/^[\s,·]+/,'').replace(/\s+([,.;])/g,'$1').replace(/[ \t]{2,}/g,' ').trim();
+       if(value)desc.textContent=value.charAt(0).toUpperCase()+value.slice(1);
+     }
      dish.style.textAlign='center';
      menus.push({content,dish,desc,height,width});
    }else labels.push({content,height,width,number:content.querySelector('.number')});
