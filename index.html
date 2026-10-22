@@ -1216,6 +1216,7 @@ function normalizeMenuNotes(){
   const titleKey=`m${r}${c}title`,descKey=`m${r}${c}desc`,notes=[];
   state.texts[titleKey]=state.texts[titleKey].replace(/\s*\(([^()]*)\)/g,(_,note)=>{notes.push('('+note.trim()+')');return ' ';}).replace(/[ \t]{2,}/g,' ').trim();
   state.texts[descKey]=menuNotesLast([state.texts[descKey],...notes].join(' '));
+  if(/pad thai/i.test(state.texts[titleKey]))state.texts[descKey]=state.texts[descKey].replace(/\bEi(?:\s+und|\s*,)\s*Erdnüssen/gi,'Ei, Sojasprossen und Erdnüssen');
  }
 }
 function text(key,tag='div',className=''){
@@ -1255,6 +1256,7 @@ function fitMenuText(){
      // Avoid repeating the protein already named in the heading.
      if(desc){
        let value=desc.textContent;
+       if(/pad thai/i.test(dish.textContent))value=value.replace(/\bEi(?:\s+und|\s*,)\s*Erdnüssen/gi,'Ei, Sojasprossen und Erdnüssen');
        const ingredients=[['Rind(?:fleisch)?','Rind(?:fleisch)?'],['Schwein(?:efleisch)?','Schwein(?:efleisch)?'],['Fisch(?:filets?)?','Fisch(?:filets?)?'],['Poulet','Poulet'],['Crevetten','Crevetten'],['Entenbrust','Entenbrust'],['Tofu','Tofu(?:würfelchen)?']];
        for(const [titlePattern,bodyPattern] of ingredients){
          if(new RegExp('\\b'+titlePattern+'\\b','i').test(dish.textContent))value=value.replace(new RegExp('\\b'+bodyPattern+'\\b','gi'),'');
