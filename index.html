@@ -2083,4 +2083,16 @@ prepareMonochromeHeads();
 #paper .extras .extra:last-child{line-height:1.15!important}
 #paper .extras .extra:last-child p{margin-bottom:2px!important}
 </style>
+<script id="foundingYearRight20261024">
+(()=>{
+ const key='founding-year-right-2026-10-24-v1';
+ if(localStorage.getItem(key))return;
+ const paper=document.getElementById('paper'),year=paper.querySelector('.founding-year');
+ if(!year||!state.artworkPositions?.year)return;
+ const previous=state.artworkPositions.year;
+ localStorage.setItem(key+'-backup',JSON.stringify(previous));
+ if(previous.x<paper.clientWidth/2){state.artworkPositions.year={x:Math.round(paper.clientWidth-previous.x-year.offsetWidth),y:previous.y};sync();persist()}
+ localStorage.setItem(key,'applied');
+})();
+</script>
 </body></html>
