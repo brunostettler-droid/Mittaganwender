@@ -1255,6 +1255,7 @@ function fitMenuText(){
      dish.style.marginBottom='0';
      // Avoid repeating the protein already named in the heading.
      if(desc){
+       desc.style.transform='none';
        let value=desc.textContent;
        if(/pad thai/i.test(dish.textContent))value=value.replace(/\bEi(?:\s+und|\s*,)\s*Erdnüssen/gi,'Ei, Sojasprossen und Erdnüssen');
        const ingredients=[['Rind(?:fleisch)?','Rind(?:fleisch)?'],['Schwein(?:efleisch)?','Schwein(?:efleisch)?'],['Fisch(?:filets?)?','Fisch(?:filets?)?'],['Poulet','Poulet'],['Crevetten','Crevetten'],['Entenbrust','Entenbrust'],['Tofu','Tofu(?:würfelchen)?']];
@@ -1307,6 +1308,12 @@ function fitMenuText(){
   return menus.every(cell=>cell.content.offsetHeight<=cell.height+.25&&cell.desc.scrollWidth<=cell.width+1);
  }
  if(!finalDescriptionFit(scale)){let low=0,high=scale;for(let i=0;i<16;i++){const mid=(low+high)/2;if(finalDescriptionFit(mid))low=mid;else high=mid}finalDescriptionFit(low)}
+ // Centre two-line descriptions against the three-line text area.
+ menus.forEach(cell=>{
+  const line=parseFloat(getComputedStyle(cell.desc).lineHeight);
+  const lines=Math.round(cell.desc.offsetHeight/line);
+  if(lines===2){const shift=Math.min(line/2,Math.max(0,cell.height-cell.content.offsetHeight));cell.desc.style.transform='translateY('+shift+'px)'}
+ });
  function fitLabels(scale){
    labels.forEach(cell=>{cell.number.style.fontSize=25*scale+'px';cell.content.style.fontSize=12*scale+'px'});
    return labels.every(cell=>cell.content.offsetHeight<=cell.height&&cell.content.scrollWidth<=cell.width);
