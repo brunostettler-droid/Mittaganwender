@@ -1971,10 +1971,19 @@ prepareMonochromeHeads();
    const style=doc.createElement('style');
    style.textContent=`#paper#paper#paper .dish,#paper#paper#paper .number{background:none!important;background-image:none!important;background-clip:border-box!important;-webkit-background-clip:border-box!important;color:#f0d699!important;-webkit-text-fill-color:#f0d699!important;text-shadow:none!important}#paper#paper#paper .menu-frame::before,#paper#paper#paper::before,#paper#paper#paper .logohead::before,#paper#paper#paper .logohead::after{content:none!important;display:none!important;background:none!important;mask:none!important;-webkit-mask:none!important}#paper#paper#paper .logohead{background:none!important;mask:none!important;-webkit-mask:none!important;overflow:visible!important}#paper#paper#paper .doc-title{background:radial-gradient(ellipse at center,rgba(143,16,24,.72) 35%,#100909 100%)!important;box-shadow:none!important}`;
    if(mode==='print')style.textContent+=`#paper#paper#paper{background:#fff!important;color:#000!important;--paper:#fff!important;--ink:#000!important;--stripe:#fff!important;--border:#777!important}#paper#paper#paper *{color:#000!important;-webkit-text-fill-color:#000!important;text-shadow:none!important;background-image:none!important;box-shadow:none!important}#paper#paper#paper .doc-title{background:#fff!important;border-color:#777!important}#paper#paper#paper .menugrid td,#paper#paper#paper .menugrid tbody tr:nth-child(odd) td,#paper#paper#paper .menu-frame{background:#fff!important}#paper#paper#paper .menugrid th{background:#eee!important}#paper#paper#paper .dish,#paper#paper#paper .number{background:none!important;color:#000!important;-webkit-text-fill-color:#000!important}`;
+   style.textContent+='#paper#paper#paper .menugrid th{background:#e5e9df!important}';
    doc.body.append(style);
    // The canvas library cannot draw CSS masks: use the same artwork as a transparent PNG.
    const logoCanvas=doc.createElement('canvas');logoCanvas.width=pdfLogoMask.naturalWidth;logoCanvas.height=pdfLogoMask.naturalHeight;
    const logoContext=logoCanvas.getContext('2d');logoContext.drawImage(pdfLogoMask,0,0);logoContext.globalCompositeOperation='source-in';logoContext.fillStyle=mode==='print'?'#000':'#ff454d';logoContext.fillRect(0,0,logoCanvas.width,logoCanvas.height);
+   // Original positive print artwork: black face on white, not white gaps in a black silhouette.
+   const positive=logoContext.getImageData(0,0,logoCanvas.width,logoCanvas.height),pixels=positive.data;
+   for(let y=0;y<logoCanvas.height;y++){
+    let left=logoCanvas.width,right=-1;
+    for(let x=0;x<logoCanvas.width;x++)if(pixels[(y*logoCanvas.width+x)*4+3]>32){left=Math.min(left,x);right=x}
+    for(let x=0;x<logoCanvas.width;x++){const i=(y*logoCanvas.width+x)*4,alpha=x>=left&&x<=right?255-pixels[i+3]:0;pixels[i]=pixels[i+1]=pixels[i+2]=0;pixels[i+3]=alpha}
+   }
+   logoContext.putImageData(positive,0,0);
    const logoUrl=logoCanvas.toDataURL('image/png');
    headDimensions.forEach(({head})=>head.style.visibility='hidden');
    sourceHeads.forEach(({x,y,width,height})=>{const image=doc.createElement('img');image.src=logoUrl;image.style.cssText='position:absolute;left:'+(x-width/2)+'px;top:'+(y-height/2)+'px;width:'+width+'px;height:'+height+'px;max-width:none;object-fit:contain;z-index:5;pointer-events:none';clone.append(image)});
@@ -1999,10 +2008,6 @@ prepareMonochromeHeads();
 
    await Promise.all([...clone.querySelectorAll('img')].map(image=>image.decode().catch(()=>{})));
   }});
-  if(mode==='print'){
-   const ctx=canvas.getContext('2d'),pixels=ctx.getImageData(0,0,canvas.width,canvas.height);
-   for(let i=0;i<pixels.data.length;i+=4){const grey=Math.round(.2126*pixels.data[i]+.7152*pixels.data[i+1]+.0722*pixels.data[i+2]);pixels.data[i]=pixels.data[i+1]=pixels.data[i+2]=grey}ctx.putImageData(pixels,0,0);
-  }
   const pdf=await PDFLib.PDFDocument.create();const page=pdf.addPage([841.89,595.28]);
   const img=await pdf.embedPng(canvas.toDataURL('image/png'));
   const margin=12,scale=Math.min((page.getWidth()-2*margin)/img.width,(page.getHeight()-2*margin)/img.height),width=img.width*scale,height=img.height*scale;
