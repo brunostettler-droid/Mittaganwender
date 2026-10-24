@@ -2024,7 +2024,7 @@ prepareMonochromeHeads();
    urls.forEach(URL.revokeObjectURL);urls=[];status.textContent=mode==='both'?'Beide PDFs sind bereit. Falls ein Download fehlt, hier nochmals anklicken: ':'PDF ist bereit. Erneut herunterladen: ';
    const date=typeof state!=='undefined'?state.start:'';
    for(const [blob,label,suffix] of [[dark,'Schwarze Ansicht','Ansicht'],[white,'Druckversion','Druck']].filter(([blob])=>blob)){
-    const url=URL.createObjectURL(blob);urls.push(url);const link=document.createElement('a');link.href=url;link.download='Wochenplan-'+(weekCycle.selected+1)+(suffix==='Druck'?'-druck':'')+'.pdf';link.textContent=label;link.style.marginRight='12px';status.append(link);link.click();await new Promise(resolve=>setTimeout(resolve,1200));
+    const filename='Wochenplan-'+(weekCycle.selected+1)+(suffix==='Druck'?'-druck':'')+'.pdf';const file=new File([blob],filename,{type:'application/pdf'});const url=URL.createObjectURL(file);urls.push(url);const link=document.createElement('a');link.href=url;link.download=file.name;link.type=file.type;link.setAttribute('data-downloadurl',file.type+':'+file.name+':'+url);link.textContent=label;link.style.marginRight='12px';status.append(link);link.click();await new Promise(resolve=>setTimeout(resolve,1200));
    }
 
   }catch(error){status.textContent='PDF konnte nicht erstellt werden. Bitte erneut versuchen. '+error.message}
