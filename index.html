@@ -1956,9 +1956,67 @@ prepareMonochromeHeads();
  const button=document.createElement('button');button.id='downloadBothPdfs';button.type='button';button.className='primary';button.textContent='Beide PDFs herunterladen';button.style.cssText='display:block;width:100%;margin-top:10px';anchor.before(button);
  const status=document.createElement('p');status.className='hint';status.id='pdfDownloadStatus';status.setAttribute('role','status');button.after(status);
  let urls=[];
- async function createPdf(mode){
+ async function createApprovedPrintPdf(){
+  const mode='print';
   const paper=document.getElementById('paper');
   const paperRect=paper.getBoundingClientRect(),paperScale=paper.clientWidth/paperRect.width;
+  const sourceHeads=[...paper.querySelectorAll('.brandline .logohead')].map(head=>{const rect=head.getBoundingClientRect(),ps=getComputedStyle(head,'::before');return {x:(rect.left+rect.width/2-paperRect.left)*paperScale,y:(rect.top+rect.height/2-paperRect.top)*paperScale,width:parseFloat(ps.width),height:parseFloat(ps.height)}});
+  const canvas=await html2canvas(paper,{scale:3,backgroundColor:mode==='print'?'#ffffff':'#101012',logging:false,useCORS:true,async onclone(doc){
+   const clone=doc.getElementById('paper');clone.style.transform='none';clone.style.margin='0';
+   clone.querySelectorAll('html2canvaspseudoelement').forEach(el=>el.remove());
+   const exportTitle=clone.querySelector('.doc-title');exportTitle.style.setProperty('background',mode==='print'?'#fff':'radial-gradient(ellipse at center,#68151b 20%,#2b1012 78%,#101010 100%)','important');exportTitle.style.setProperty('box-shadow','none','important');
+   const headDimensions=[...clone.querySelectorAll('.brandline .logohead')].map(head=>{const ps=doc.defaultView.getComputedStyle(head,'::before');return {head,width:(24.32*Number(state.style.headSize||100)/100)+'px',height:(62*Number(state.style.headSize||100)/100)+'px'}});
+   clone.querySelectorAll('[contenteditable]').forEach(el=>el.removeAttribute('contenteditable'));
+   clone.querySelectorAll('.week-controls,#weekDateStatus').forEach(el=>el.style.display='none');
+   const style=doc.createElement('style');
+   style.textContent=`#paper#paper#paper .dish,#paper#paper#paper .number{background:none!important;background-image:none!important;background-clip:border-box!important;-webkit-background-clip:border-box!important;color:#f0d699!important;-webkit-text-fill-color:#f0d699!important;text-shadow:none!important}#paper#paper#paper .menu-frame::before,#paper#paper#paper::before,#paper#paper#paper .logohead::before,#paper#paper#paper .logohead::after{content:none!important;display:none!important;background:none!important;mask:none!important;-webkit-mask:none!important}#paper#paper#paper .logohead{background:none!important;mask:none!important;-webkit-mask:none!important;overflow:visible!important}#paper#paper#paper .doc-title{background:radial-gradient(ellipse at center,rgba(143,16,24,.72) 35%,#100909 100%)!important;box-shadow:none!important}`;
+   if(mode==='print')style.textContent+=`#paper#paper#paper{background:#fff!important;color:#000!important;--paper:#fff!important;--ink:#000!important;--stripe:#fff!important;--border:#777!important}#paper#paper#paper *{color:#000!important;-webkit-text-fill-color:#000!important;text-shadow:none!important;background-image:none!important;box-shadow:none!important}#paper#paper#paper .doc-title{background:#fff!important;border-color:#777!important}#paper#paper#paper .menugrid td,#paper#paper#paper .menugrid tbody tr:nth-child(odd) td,#paper#paper#paper .menu-frame{background:#fff!important}#paper#paper#paper .menugrid th{background:#eee!important}#paper#paper#paper .dish,#paper#paper#paper .number{background:none!important;color:#000!important;-webkit-text-fill-color:#000!important}`;
+   doc.body.append(style);
+   // The canvas library cannot draw CSS masks: use the same artwork as a transparent PNG.
+   const logoCanvas=doc.createElement('canvas');logoCanvas.width=pdfLogoMask.naturalWidth;logoCanvas.height=pdfLogoMask.naturalHeight;
+   const logoContext=logoCanvas.getContext('2d');logoContext.drawImage(pdfLogoMask,0,0);logoContext.globalCompositeOperation='source-in';logoContext.fillStyle=mode==='print'?'#000':'#ff454d';logoContext.fillRect(0,0,logoCanvas.width,logoCanvas.height);
+   const logoUrl=logoCanvas.toDataURL('image/png');
+   headDimensions.forEach(({head})=>head.style.visibility='hidden');
+   sourceHeads.forEach(({x,y,width,height})=>{const image=doc.createElement('img');image.src=logoUrl;image.style.cssText='position:absolute;left:'+(x-width/2)+'px;top:'+(y-height/2)+'px;width:'+width+'px;height:'+height+'px;max-width:none;object-fit:contain;z-index:5;pointer-events:none';clone.append(image)});
+   if(mode!=='print'){
+    const ellipse=doc.createElement('canvas');ellipse.width=Math.ceil(exportTitle.clientWidth*3);ellipse.height=Math.ceil(exportTitle.clientHeight*3);const context=ellipse.getContext('2d'),w=ellipse.width,h=ellipse.height;
+    const gradient=context.createRadialGradient(w/2,h/2,0,w/2,h/2,w/2);gradient.addColorStop(0,'#8c1c24');gradient.addColorStop(.55,'#641219');gradient.addColorStop(1,'#080808');context.fillStyle=gradient;context.beginPath();context.ellipse(w/2,h/2,w/2,h/2,0,0,Math.PI*2);context.fill();
+    exportTitle.style.setProperty('background','url("'+ellipse.toDataURL('image/png')+'") center/100% 100% no-repeat','important');
+   }
+   if(mode!=='print'){const image=doc.createElement('img');image.src=logoUrl;image.style.cssText='position:absolute;left:50%;top:44px;transform:translateX(-50%);width:560px;height:680px;object-fit:contain;opacity:.42;z-index:-1;pointer-events:none';clone.append(image)}
+   // Convert modern computed CSS colours to RGB supported by the canvas renderer.
+   const swatch=doc.createElement('canvas');swatch.width=swatch.height=1;const swatchContext=swatch.getContext('2d');
+   for(const el of [clone,...clone.querySelectorAll('*')]){
+    const computed=doc.defaultView.getComputedStyle(el);
+    for(const property of ['color','background-color','border-top-color','border-right-color','border-bottom-color','border-left-color']){
+     const value=computed.getPropertyValue(property);
+     if(value.includes('color(')||value.includes('color-mix(')){
+      swatchContext.clearRect(0,0,1,1);swatchContext.fillStyle=value;swatchContext.fillRect(0,0,1,1);const rgba=swatchContext.getImageData(0,0,1,1).data;
+      el.style.setProperty(property,`rgba(${rgba[0]},${rgba[1]},${rgba[2]},${rgba[3]/255})`,'important');
+     }
+    }
+   }
+
+   await Promise.all([...clone.querySelectorAll('img')].map(image=>image.decode().catch(()=>{})));
+  }});
+  if(mode==='print'){
+   const ctx=canvas.getContext('2d'),pixels=ctx.getImageData(0,0,canvas.width,canvas.height);
+   for(let i=0;i<pixels.data.length;i+=4){const grey=Math.round(.2126*pixels.data[i]+.7152*pixels.data[i+1]+.0722*pixels.data[i+2]);pixels.data[i]=pixels.data[i+1]=pixels.data[i+2]=grey}ctx.putImageData(pixels,0,0);
+  }
+  const pdf=await PDFLib.PDFDocument.create();const page=pdf.addPage([841.89,595.28]);
+  const img=await pdf.embedPng(canvas.toDataURL('image/png'));
+  const margin=12,scale=Math.min((page.getWidth()-2*margin)/img.width,(page.getHeight()-2*margin)/img.height),width=img.width*scale,height=img.height*scale;
+  page.drawImage(img,{x:(page.getWidth()-width)/2,y:page.getHeight()-margin-height,width,height});
+  pdf.setTitle(mode==='print'?'Mittagsmenu – Druckversion':'Mittagsmenu – Schwarze Ansicht');
+  return new Blob([await pdf.save()],{type:'application/pdf'});
+ }
+
+ async function createPdf(mode){
+  if(mode==='print')return createApprovedPrintPdf();
+  const paper=document.getElementById('paper');
+  const paperRect=paper.getBoundingClientRect(),paperScale=paper.clientWidth/paperRect.width;
+  const title=paper.querySelector('.doc-title'),titleRect=title.getBoundingClientRect(),titleStyle=getComputedStyle(title);
+  const titleArt={x:(titleRect.left-paperRect.left)*paperScale,y:(titleRect.top-paperRect.top)*paperScale,width:title.offsetWidth,height:title.offsetHeight,font:titleStyle.fontWeight+' '+titleStyle.fontSize+' '+titleStyle.fontFamily,text:title.textContent,color:'#f0d699'};
   const sourceHeads=[...paper.querySelectorAll('.brandline .logohead')].map(head=>{const rect=head.getBoundingClientRect(),ps=getComputedStyle(head,'::before');return {x:(rect.left+rect.width/2-paperRect.left)*paperScale,y:(rect.top+rect.height/2-paperRect.top)*paperScale,width:parseFloat(ps.width),height:parseFloat(ps.height)}});
   const nativeOptions={scale:3,x:0,y:0,width:paper.offsetWidth,height:paper.offsetHeight,scrollX:0,scrollY:0,foreignObjectRendering:true,backgroundColor:'#101010',logging:false,useCORS:true,onclone(doc){
    const clone=doc.getElementById('paper');clone.style.transform='none';clone.style.margin='0';clone.style.boxShadow='none';clone.style.position='fixed';clone.style.left='0';clone.style.top='0';
@@ -1983,15 +2041,7 @@ prepareMonochromeHeads();
    const logoUrl=logoCanvas.toDataURL('image/png');
    headDimensions.forEach(({head})=>head.style.visibility='hidden');
    sourceHeads.forEach(({x,y,width,height})=>{const image=doc.createElement('canvas');image.width=logoCanvas.width;image.height=logoCanvas.height;image.getContext('2d').drawImage(logoCanvas,0,0);image.style.cssText='position:absolute;left:'+(x-width/2)+'px;top:'+(y-height/2)+'px;width:'+width+'px;height:'+height+'px;max-width:none;object-fit:contain;z-index:5;pointer-events:none';clone.append(image)});
-   if(mode!=='print'){
-    const ellipse=doc.createElement('canvas'),width=exportTitle.clientWidth,height=exportTitle.clientHeight;
-    ellipse.width=Math.ceil(width*3);ellipse.height=Math.ceil(height*3);const context=ellipse.getContext('2d');
-    context.scale(3,3);context.translate(width/2,height/2);context.scale(width/2-1,height/2-1);
-    const gradient=context.createRadialGradient(0,0,0,0,0,1);gradient.addColorStop(0,'#70171d');gradient.addColorStop(.55,'#65151a');gradient.addColorStop(.82,'#3b1014');gradient.addColorStop(1,'#080808');
-    context.fillStyle=gradient;context.beginPath();context.arc(0,0,1,0,Math.PI*2);context.fill();
-    exportTitle.style.setProperty('background','none','important');exportTitle.style.setProperty('border-color','transparent','important');exportTitle.style.setProperty('border-radius','0','important');exportTitle.style.setProperty('overflow','visible','important');exportTitle.style.position='relative';exportTitle.style.zIndex='0';
-    ellipse.style.cssText='position:absolute;left:0;top:0;width:'+width+'px;height:'+height+'px;z-index:-1;pointer-events:none';exportTitle.append(ellipse);
-   }
+   if(mode!=='print')exportTitle.style.setProperty('visibility','hidden','important');
    if(mode!=='print'){
     const image=doc.createElement('canvas');image.width=1680;image.height=2040;
     const context=image.getContext('2d'),fit=Math.min(image.width/pdfLogoMask.naturalWidth,image.height/pdfLogoMask.naturalHeight),w=pdfLogoMask.naturalWidth*fit,h=pdfLogoMask.naturalHeight*fit;
@@ -2014,9 +2064,17 @@ prepareMonochromeHeads();
   }};
   const safari=/AppleWebKit/i.test(navigator.userAgent)&&!/Chrome|Chromium|Edg/i.test(navigator.userAgent);
   const useNative=mode==='screen'&&!safari;
-  let canvas;
+  let canvas,renderedNative=useNative;
   try{canvas=await html2canvas(paper,useNative?nativeOptions:standardOptions)}
-  catch(error){if(!useNative)throw error;canvas=await html2canvas(paper,standardOptions)}
+  catch(error){if(!useNative)throw error;renderedNative=false;canvas=await html2canvas(paper,standardOptions)}
+  if(mode==='screen'&&!renderedNative){
+   // Draw the entire title after capture: no HTML box can clip its ellipse or shadow.
+   const pad=26,ratio=canvas.width/paper.offsetWidth,art=document.createElement('canvas');art.width=Math.ceil((titleArt.width+pad*2)*3);art.height=Math.ceil((titleArt.height+pad*2)*3);
+   const ctx=art.getContext('2d');ctx.scale(3,3);ctx.translate(pad+titleArt.width/2,pad+titleArt.height/2);
+   ctx.save();ctx.scale(titleArt.width/2,titleArt.height/2);const gradient=ctx.createRadialGradient(0,0,0,0,0,1);gradient.addColorStop(0,'#71171d');gradient.addColorStop(.65,'#65151b');gradient.addColorStop(.88,'#321013');gradient.addColorStop(1,'#080808');ctx.fillStyle=gradient;ctx.beginPath();ctx.arc(0,0,1,0,Math.PI*2);ctx.fill();ctx.restore();
+   ctx.font=titleArt.font;ctx.fillStyle=titleArt.color;ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(titleArt.text,0,-1);
+   canvas.getContext('2d').drawImage(art,(titleArt.x-pad)*ratio,(titleArt.y-pad)*ratio,(titleArt.width+pad*2)*ratio,(titleArt.height+pad*2)*ratio);
+  }
   if(mode==='print'){
    const ctx=canvas.getContext('2d'),pixels=ctx.getImageData(0,0,canvas.width,canvas.height);
    for(let i=0;i<pixels.data.length;i+=4){const grey=Math.round(.2126*pixels.data[i]+.7152*pixels.data[i+1]+.0722*pixels.data[i+2]);pixels.data[i]=pixels.data[i+1]=pixels.data[i+2]=grey}ctx.putImageData(pixels,0,0);
