@@ -2010,7 +2010,7 @@ prepareMonochromeHeads();
    const bg=backgroundHead.getContext('2d'),fit=Math.min(backgroundHead.width/logoCanvas.width,backgroundHead.height/logoCanvas.height),bw=logoCanvas.width*fit,bh=logoCanvas.height*fit;
    bg.drawImage(logoCanvas,(backgroundHead.width-bw)/2,(backgroundHead.height-bh)/2,bw,bh);bg.globalCompositeOperation='source-in';bg.fillStyle='#d9d9d9';bg.fillRect(0,0,backgroundHead.width,backgroundHead.height);
    backgroundHead.style.cssText='position:absolute;left:50%;top:44px;transform:translateX(-50%);width:560px;height:680px;z-index:-1;pointer-events:none';clone.append(backgroundHead);
-   const headStyle=doc.createElement('style');headStyle.textContent='#paper#paper#paper .menugrid,#paper#paper#paper .menugrid tbody tr td,#paper#paper#paper .menu-frame{background:transparent!important}';doc.body.append(headStyle);
+   const headStyle=doc.createElement('style');headStyle.textContent='#paper#paper#paper#paper .menugrid,#paper#paper#paper#paper .menugrid tbody tr td,#paper#paper#paper#paper .menu-frame{background:transparent!important}';doc.body.append(headStyle);
    await Promise.all([...clone.querySelectorAll('img')].map(image=>image.decode().catch(()=>{})));
   }});
   const pdf=await PDFLib.PDFDocument.create();const page=pdf.addPage([841.89,595.28]);
