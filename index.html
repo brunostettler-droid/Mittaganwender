@@ -1960,7 +1960,11 @@ prepareMonochromeHeads();
   const paper=document.getElementById('paper');
   const paperRect=paper.getBoundingClientRect(),paperScale=paper.clientWidth/paperRect.width;
   const sourceHeads=[...paper.querySelectorAll('.brandline .logohead')].map(head=>{const rect=head.getBoundingClientRect(),ps=getComputedStyle(head,'::before');return {x:(rect.left+rect.width/2-paperRect.left)*paperScale,y:(rect.top+rect.height/2-paperRect.top)*paperScale,width:parseFloat(ps.width),height:parseFloat(ps.height)}});
-  const canvas=await html2canvas(paper,{scale:3,backgroundColor:mode==='print'?'#ffffff':'#101012',logging:false,useCORS:true,onclone(doc){
+  const canvas=await (mode==='screen'?html2canvas(paper,{scale:3,foreignObjectRendering:true,backgroundColor:'#101010',logging:false,useCORS:true,onclone(doc){
+   const clone=doc.getElementById('paper');clone.style.transform='none';clone.style.margin='0';
+   clone.querySelectorAll('[contenteditable]').forEach(el=>el.removeAttribute('contenteditable'));
+   clone.querySelectorAll('.week-controls,#weekDateStatus').forEach(el=>el.style.display='none');
+  }}):html2canvas(paper,{scale:3,backgroundColor:mode==='print'?'#ffffff':'#101012',logging:false,useCORS:true,onclone(doc){
    const clone=doc.getElementById('paper');clone.style.transform='none';clone.style.margin='0';
    clone.querySelectorAll('html2canvaspseudoelement').forEach(el=>el.remove());
    const exportTitle=clone.querySelector('.doc-title');exportTitle.style.setProperty('background',mode==='print'?'#fff':'radial-gradient(ellipse at center,#68151b 20%,#2b1012 78%,#101010 100%)','important');exportTitle.style.setProperty('box-shadow','none','important');
@@ -1996,7 +2000,7 @@ prepareMonochromeHeads();
     }
    }
 
-  }});
+  }}));
   if(mode==='print'){
    const ctx=canvas.getContext('2d'),pixels=ctx.getImageData(0,0,canvas.width,canvas.height);
    for(let i=0;i<pixels.data.length;i+=4){const grey=Math.round(.2126*pixels.data[i]+.7152*pixels.data[i+1]+.0722*pixels.data[i+2]);pixels.data[i]=pixels.data[i+1]=pixels.data[i+2]=grey}ctx.putImageData(pixels,0,0);
