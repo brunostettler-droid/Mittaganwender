@@ -33,7 +33,7 @@
 @media print{.workspace{min-height:0!important}}
 </style><style id="userFoundingYear">
 #paper .brandline .logohead:last-child::after{
- content:"Gegr. 1995";
+ content:"gegr. 1995";
  position:absolute;
  left:calc(50% + 12.16px * var(--headSize,1) + 48px);
  top:50%;transform:translateY(-50%);
@@ -1638,7 +1638,7 @@ try {
  #paper .extras{background:#fff!important}
  #paper::before,#paper .menu-frame::before{display:none!important}
  #paper .brandline .logohead::before{background:var(--bw-head-art,var(--pdf-head-art)) center/contain no-repeat!important;filter:grayscale(1) brightness(0)!important}
- #paper .brandline .logohead:last-child::after{content:"Gegr. 1995"!important;background:none!important;width:auto!important;height:auto!important;color:#000!important;font-family:Arial,sans-serif!important;font-size:18px!important;letter-spacing:.5px!important;text-shadow:none!important;filter:none!important}
+ #paper .brandline .logohead:last-child::after{content:"gegr. 1995"!important;background:none!important;width:auto!important;height:auto!important;color:#000!important;font-family:Arial,sans-serif!important;font-size:18px!important;letter-spacing:.5px!important;text-shadow:none!important;filter:none!important}
 }
 </style><script id="monochromeHeadArtwork">
 function prepareMonochromeHeads(){
@@ -1692,7 +1692,7 @@ prepareMonochromeHeads();
   apply();
   let year=paper.querySelector('.founding-year');
   if(!year){
-   year=document.createElement('span');year.className='founding-year';year.textContent='Gegr. 1995';year.dataset.artwork='year';paper.append(year);
+   year=document.createElement('span');year.className='founding-year';year.textContent='gegr. 1995';year.dataset.artwork='year';paper.append(year);
   }
   const values=positions();
   if(!values.year||!Number.isFinite(values.year.x)||!Number.isFinite(values.year.y)){
@@ -1700,7 +1700,7 @@ prepareMonochromeHeads();
    const r=heads[1].getBoundingClientRect(),pr=paper.getBoundingClientRect();
    values.year={x:(r.left-pr.left)/scale+heads[1].offsetWidth/2+12.16*(state.style.headSize/100)+48,y:(r.top-pr.top)/scale+heads[1].offsetHeight/2-10.8};
   }
-  for(const el of [...heads,year]){el.tabIndex=0;el.setAttribute('role','button');el.setAttribute('aria-label',el===year?'Gegr. 1995 verschieben':el===heads[0]?'Linken Kopf verschieben':'Rechten Kopf verschieben');el.title=el===year?'Frei ziehen oder mit Pfeiltasten verschieben':'Beide Köpfe synchron ziehen oder mit Pfeiltasten verschieben'}
+  for(const el of [...heads,year]){el.tabIndex=0;el.setAttribute('role','button');el.setAttribute('aria-label',el===year?'gegr. 1995 verschieben':el===heads[0]?'Linken Kopf verschieben':'Rechten Kopf verschieben');el.title=el===year?'Frei ziehen oder mit Pfeiltasten verschieben':'Beide Köpfe synchron ziehen oder mit Pfeiltasten verschieben'}
   apply();
  }
  const oldRender=render;render=function(...args){const result=oldRender(...args);install();return result};
@@ -1959,6 +1959,19 @@ prepareMonochromeHeads();
    style.textContent='#paper .dish,#paper .doc-title,#paper .number{background:none!important;background-image:none!important;-webkit-text-fill-color:currentColor!important;text-shadow:none!important}#paper .dish,#paper .doc-title,#paper .number{color:#ffcc33!important}#paper .menu-frame::before{display:none!important}';
    if(mode==='print')style.textContent+=`#paper#paper{--paper:#fff!important;--ink:#000!important;--stripe:#fff!important;--border:#777!important;--accent:#000!important;--header:#eee!important;--header-text:#000!important;background:#fff!important;color:#000!important}#paper#paper *{color:#000!important;-webkit-text-fill-color:#000!important;text-shadow:none!important}#paper .dish,#paper .doc-title,#paper .number{color:#000!important}#paper .doc-title,#paper .brandline,#paper .brand,#paper .brandservice,#paper .extras,#paper .extra{background:transparent!important}#paper .menugrid th{background:#eee!important;color:#000!important}#paper .menugrid td{background:#fff!important;border-color:#777!important}#paper::before,#paper .menu-frame::before{display:none!important}`;
    doc.body.append(style);
+   // Convert modern computed CSS colours to RGB supported by the canvas renderer.
+   const swatch=doc.createElement('canvas');swatch.width=swatch.height=1;const swatchContext=swatch.getContext('2d');
+   for(const el of [clone,...clone.querySelectorAll('*')]){
+    const computed=doc.defaultView.getComputedStyle(el);
+    for(const property of ['color','background-color','border-top-color','border-right-color','border-bottom-color','border-left-color']){
+     const value=computed.getPropertyValue(property);
+     if(value.includes('color(')||value.includes('color-mix(')){
+      swatchContext.clearRect(0,0,1,1);swatchContext.fillStyle=value;swatchContext.fillRect(0,0,1,1);const rgba=swatchContext.getImageData(0,0,1,1).data;
+      el.style.setProperty(property,`rgba(${rgba[0]},${rgba[1]},${rgba[2]},${rgba[3]/255})`,'important');
+     }
+    }
+   }
+
   }});
   if(mode==='print'){
    const ctx=canvas.getContext('2d'),pixels=ctx.getImageData(0,0,canvas.width,canvas.height);
@@ -2021,4 +2034,9 @@ prepareMonochromeHeads();
  #paper .extra .extra-title{color:#ffe0a6!important}
  #paper .fineprint{color:#e4ddd0!important}
  #paper .menugrid .dish,#paper .menugrid .number{color:#f0d699!important;-webkit-text-fill-color:#f0d699!important}
-}</style><style id="strongerBackgroundHead20261024">@media screen{#paper::before{opacity:.42!important}}</style></body></html>
+}</style><style id="strongerBackgroundHead20261024">@media screen{#paper::before{opacity:.42!important}}</style><style id="matchedWebshopBrand20261024">@media screen{
+ #paper .brandline .logohead{opacity:1!important;filter:none!important}
+ #paper .brandline .logohead::before{background-color:#ff454d!important;opacity:1!important;filter:none!important}
+ #paper [data-artwork="year"]{color:#ff454d!important;-webkit-text-fill-color:#ff454d!important;opacity:1!important;filter:none!important;text-shadow:none!important;-webkit-text-stroke:0!important}
+ #paper .doc-title{background:rgba(143,16,24,.6)!important;background-clip:padding-box!important;border:1px solid #000!important;box-shadow:inset 0 0 0 2px #000,inset 0 0 18px 4.5px rgba(0,0,0,.85),0 0 10.8px 2.16px rgba(0,0,0,.85)!important}
+}</style><style id="matchingBrandDot20261024">@media screen{#paper .brand .reddot{color:#ff454d!important;-webkit-text-fill-color:#ff454d!important;background:none!important}}</style><style id="matchingMainTitleGold20261024">@media screen{#paper .doc-title{color:#f0d699!important;-webkit-text-fill-color:#f0d699!important;-webkit-text-stroke:0!important}}</style></body></html>
