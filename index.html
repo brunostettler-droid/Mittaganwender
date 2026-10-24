@@ -1960,7 +1960,9 @@ prepareMonochromeHeads();
   const paper=document.getElementById('paper');
   const canvas=await html2canvas(paper,{scale:3,backgroundColor:mode==='print'?'#ffffff':'#101012',logging:false,useCORS:true,onclone(doc){
    const clone=doc.getElementById('paper');clone.style.transform='none';clone.style.margin='0';
-   const headDimensions=[...clone.querySelectorAll('.brandline .logohead')].map(head=>{const ps=doc.defaultView.getComputedStyle(head,'::before');return {head,width:ps.width,height:ps.height}});
+   clone.querySelectorAll('html2canvaspseudoelement').forEach(el=>el.remove());
+   const exportTitle=clone.querySelector('.doc-title');exportTitle.style.setProperty('background',mode==='print'?'#fff':'radial-gradient(ellipse at center,#68151b 20%,#2b1012 78%,#101010 100%)','important');exportTitle.style.setProperty('box-shadow','none','important');
+   const headDimensions=[...clone.querySelectorAll('.brandline .logohead')].map(head=>{const ps=doc.defaultView.getComputedStyle(head,'::before');return {head,width:(24.32*Number(state.style.headSize||100)/100)+'px',height:(62*Number(state.style.headSize||100)/100)+'px'}});
    clone.querySelectorAll('[contenteditable]').forEach(el=>el.removeAttribute('contenteditable'));
    clone.querySelectorAll('.week-controls,#weekDateStatus').forEach(el=>el.style.display='none');
    const style=doc.createElement('style');
