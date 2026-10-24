@@ -1911,7 +1911,7 @@ prepareMonochromeHeads();
  printButton.style.cssText=screenButton.style.cssText+';margin-top:7px';
  printButton.textContent='Schwarz-weisse PDF für Druck';
  screenButton.after(printButton);
- const hint=document.createElement('p');hint.className='hint';hint.textContent='Im Druckfenster „Als PDF sichern“ wählen. Für die schwarze PDF die Hintergrundgrafiken einschalten.';printButton.after(hint);
+ const hint=document.createElement('p');hint.className='hint';hint.textContent='PDFs werden direkt als Dateien heruntergeladen.';printButton.after(hint);
  screenButton.onclick=()=>{document.body.dataset.pdfMode='screen';save()};
  printButton.onclick=()=>{document.body.dataset.pdfMode='print';save()};
 })();
@@ -1976,13 +1976,13 @@ prepareMonochromeHeads();
    const logoContext=logoCanvas.getContext('2d');logoContext.drawImage(pdfLogoMask,0,0);logoContext.globalCompositeOperation='source-in';logoContext.fillStyle=mode==='print'?'#000':'#ff454d';logoContext.fillRect(0,0,logoCanvas.width,logoCanvas.height);
    const logoUrl=logoCanvas.toDataURL('image/png');
    headDimensions.forEach(({head})=>head.style.visibility='hidden');
-   sourceHeads.forEach(({x,y,width,height})=>{const image=doc.createElement('img');image.src=logoUrl;image.style.cssText='position:absolute;left:'+(x-width/2)+'px;top:'+(y-height/2)+'px;width:'+width+'px;height:'+height+'px;max-width:none;object-fit:contain;z-index:5;pointer-events:none';clone.append(image)});
+   sourceHeads.forEach(({x,y,width,height})=>{const image=doc.createElement('canvas');image.width=logoCanvas.width;image.height=logoCanvas.height;image.getContext('2d').drawImage(logoCanvas,0,0);image.style.cssText='position:absolute;left:'+(x-width/2)+'px;top:'+(y-height/2)+'px;width:'+width+'px;height:'+height+'px;max-width:none;object-fit:contain;z-index:5;pointer-events:none';clone.append(image)});
    if(mode!=='print'){
     const ellipse=doc.createElement('canvas');ellipse.width=Math.ceil(exportTitle.clientWidth*3);ellipse.height=Math.ceil(exportTitle.clientHeight*3);const context=ellipse.getContext('2d'),w=ellipse.width,h=ellipse.height;
     const gradient=context.createRadialGradient(w/2,h/2,0,w/2,h/2,w/2);gradient.addColorStop(0,'#8c1c24');gradient.addColorStop(.55,'#641219');gradient.addColorStop(1,'#080808');context.fillStyle=gradient;context.beginPath();context.ellipse(w/2,h/2,w/2,h/2,0,0,Math.PI*2);context.fill();
     exportTitle.style.setProperty('background','url("'+ellipse.toDataURL('image/png')+'") center/100% 100% no-repeat','important');
    }
-   if(mode!=='print'){const image=doc.createElement('img');image.src=logoUrl;image.style.cssText='position:absolute;left:50%;top:44px;transform:translateX(-50%);width:560px;height:680px;object-fit:contain;opacity:.42;z-index:-1;pointer-events:none';clone.append(image)}
+   if(mode!=='print'){const image=doc.createElement('canvas');image.width=logoCanvas.width;image.height=logoCanvas.height;image.getContext('2d').drawImage(logoCanvas,0,0);image.style.cssText='position:absolute;left:50%;top:44px;transform:translateX(-50%);width:560px;height:680px;object-fit:contain;opacity:.42;z-index:-1;pointer-events:none';clone.append(image)}
    // Convert modern computed CSS colours to RGB supported by the canvas renderer.
    const swatch=doc.createElement('canvas');swatch.width=swatch.height=1;const swatchContext=swatch.getContext('2d');
    for(const el of [clone,...clone.querySelectorAll('*')]){
@@ -2008,23 +2008,26 @@ prepareMonochromeHeads();
   pdf.setTitle(mode==='print'?'Mittagsmenu – Druckversion':'Mittagsmenu – Schwarze Ansicht');
   return new Blob([await pdf.save()],{type:'application/pdf'});
  }
- button.onclick=async()=>{
+ async function downloadPdfs(mode='both'){
   button.disabled=true;status.replaceChildren();
   try{
    document.activeElement?.blur();if(typeof preparePrint==='function')preparePrint();
    await document.fonts.ready;if(typeof pdfLogoMask!=='undefined')await pdfLogoMask.decode();
    await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));
-   status.textContent='Schwarze Ansicht wird erstellt …';const dark=await createPdf('screen');
-   status.textContent='Schwarz-weisse Druckversion wird erstellt …';const white=await createPdf('print');
-   urls.forEach(URL.revokeObjectURL);urls=[];status.textContent='Beide PDFs sind bereit. Falls ein Download fehlt, hier nochmals anklicken: ';
+   status.textContent='Schwarze Ansicht wird erstellt …';const dark=mode!=='print'?await createPdf('screen'):null;
+   status.textContent='Schwarz-weisse Druckversion wird erstellt …';const white=mode!=='screen'?await createPdf('print'):null;
+   urls.forEach(URL.revokeObjectURL);urls=[];status.textContent=mode==='both'?'Beide PDFs sind bereit. Falls ein Download fehlt, hier nochmals anklicken: ':'PDF ist bereit. Erneut herunterladen: ';
    const date=typeof state!=='undefined'?state.start:'';
-   for(const [blob,label,suffix] of [[dark,'Schwarze Ansicht','Ansicht'],[white,'Druckversion','Druck']]){
+   for(const [blob,label,suffix] of [[dark,'Schwarze Ansicht','Ansicht'],[white,'Druckversion','Druck']].filter(([blob])=>blob)){
     const url=URL.createObjectURL(blob);urls.push(url);const link=document.createElement('a');link.href=url;link.download='Wochenplan-'+(weekCycle.selected+1)+(suffix==='Druck'?'-druck':'')+'.pdf';link.textContent=label;link.style.marginRight='12px';status.append(link);link.click();await new Promise(resolve=>setTimeout(resolve,1200));
    }
 
   }catch(error){status.textContent='PDF konnte nicht erstellt werden. Bitte erneut versuchen. '+error.message}
   finally{button.disabled=false}
  };
+ button.onclick=()=>downloadPdfs();
+ anchor.onclick=()=>downloadPdfs('screen');
+ const printButton=document.getElementById('savePrintPdf');if(printButton)printButton.onclick=()=>downloadPdfs('print');
 })();
 </script><style id="webshopMenuTheme20261024">/* Match the webshop's black, burgundy and warm gold palette. */
 @media screen{
