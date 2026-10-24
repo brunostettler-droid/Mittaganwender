@@ -1960,12 +1960,13 @@ prepareMonochromeHeads();
   const paper=document.getElementById('paper');
   const paperRect=paper.getBoundingClientRect(),paperScale=paper.clientWidth/paperRect.width;
   const sourceHeads=[...paper.querySelectorAll('.brandline .logohead')].map(head=>{const rect=head.getBoundingClientRect(),ps=getComputedStyle(head,'::before');return {x:(rect.left+rect.width/2-paperRect.left)*paperScale,y:(rect.top+rect.height/2-paperRect.top)*paperScale,width:parseFloat(ps.width),height:parseFloat(ps.height)}});
-  const canvas=await (mode==='screen'?html2canvas(paper,{scale:3,x:0,y:0,width:paper.offsetWidth,height:paper.offsetHeight,scrollX:0,scrollY:0,foreignObjectRendering:true,backgroundColor:'#101010',logging:false,useCORS:true,onclone(doc){
+  const nativeOptions={scale:3,x:0,y:0,width:paper.offsetWidth,height:paper.offsetHeight,scrollX:0,scrollY:0,foreignObjectRendering:true,backgroundColor:'#101010',logging:false,useCORS:true,onclone(doc){
    const clone=doc.getElementById('paper');clone.style.transform='none';clone.style.margin='0';clone.style.boxShadow='none';clone.style.position='fixed';clone.style.left='0';clone.style.top='0';
    clone.querySelectorAll('.selected-menu').forEach(el=>{el.classList.remove('selected-menu');el.style.outline='none'});
    clone.querySelectorAll('[contenteditable]').forEach(el=>el.removeAttribute('contenteditable'));
    clone.querySelectorAll('.week-controls,#weekDateStatus').forEach(el=>el.style.display='none');
-  }}):html2canvas(paper,{scale:3,backgroundColor:mode==='print'?'#ffffff':'#101012',logging:false,useCORS:true,onclone(doc){
+  }};
+  const standardOptions={scale:3,backgroundColor:mode==='print'?'#ffffff':'#101012',logging:false,useCORS:true,onclone(doc){
    const clone=doc.getElementById('paper');clone.style.transform='none';clone.style.margin='0';
    clone.querySelectorAll('html2canvaspseudoelement').forEach(el=>el.remove());
    const exportTitle=clone.querySelector('.doc-title');exportTitle.style.setProperty('background',mode==='print'?'#fff':'radial-gradient(ellipse at center,#68151b 20%,#2b1012 78%,#101010 100%)','important');exportTitle.style.setProperty('box-shadow','none','important');
@@ -1987,7 +1988,12 @@ prepareMonochromeHeads();
     const gradient=context.createRadialGradient(w/2,h/2,0,w/2,h/2,w/2);gradient.addColorStop(0,'#8c1c24');gradient.addColorStop(.55,'#641219');gradient.addColorStop(1,'#080808');context.fillStyle=gradient;context.beginPath();context.ellipse(w/2,h/2,w/2,h/2,0,0,Math.PI*2);context.fill();
     exportTitle.style.setProperty('background','url("'+ellipse.toDataURL('image/png')+'") center/100% 100% no-repeat','important');
    }
-   if(mode!=='print'){const image=doc.createElement('canvas');image.width=logoCanvas.width;image.height=logoCanvas.height;image.getContext('2d').drawImage(logoCanvas,0,0);image.style.cssText='position:absolute;left:50%;top:44px;transform:translateX(-50%);width:560px;height:680px;object-fit:contain;opacity:.42;z-index:-1;pointer-events:none';clone.append(image)}
+   if(mode!=='print'){
+    const image=doc.createElement('canvas');image.width=1680;image.height=2040;
+    const context=image.getContext('2d'),fit=Math.min(image.width/pdfLogoMask.naturalWidth,image.height/pdfLogoMask.naturalHeight),w=pdfLogoMask.naturalWidth*fit,h=pdfLogoMask.naturalHeight*fit;
+    context.drawImage(pdfLogoMask,(image.width-w)/2,(image.height-h)/2,w,h);context.globalCompositeOperation='source-in';context.fillStyle=getComputedStyle(paper,'::before').backgroundColor;context.fillRect(0,0,image.width,image.height);
+    image.style.cssText='position:absolute;left:50%;top:44px;transform:translateX(-50%);width:560px;height:680px;opacity:.42;z-index:-1;pointer-events:none';clone.append(image)
+   }
    // Convert modern computed CSS colours to RGB supported by the canvas renderer.
    const swatch=doc.createElement('canvas');swatch.width=swatch.height=1;const swatchContext=swatch.getContext('2d');
    for(const el of [clone,...clone.querySelectorAll('*')]){
@@ -2001,7 +2007,12 @@ prepareMonochromeHeads();
     }
    }
 
-  }}));
+  }};
+  const safari=/AppleWebKit/i.test(navigator.userAgent)&&!/Chrome|Chromium|Edg/i.test(navigator.userAgent);
+  const useNative=mode==='screen'&&!safari;
+  let canvas;
+  try{canvas=await html2canvas(paper,useNative?nativeOptions:standardOptions)}
+  catch(error){if(!useNative)throw error;canvas=await html2canvas(paper,standardOptions)}
   if(mode==='print'){
    const ctx=canvas.getContext('2d'),pixels=ctx.getImageData(0,0,canvas.width,canvas.height);
    for(let i=0;i<pixels.data.length;i+=4){const grey=Math.round(.2126*pixels.data[i]+.7152*pixels.data[i+1]+.0722*pixels.data[i+2]);pixels.data[i]=pixels.data[i+1]=pixels.data[i+2]=grey}ctx.putImageData(pixels,0,0);
@@ -2027,7 +2038,7 @@ prepareMonochromeHeads();
     const filename='Wochenplan-'+(weekCycle.selected+1)+(suffix==='Druck'?'-druck':'')+'.pdf';const file=new File([blob],filename,{type:'application/pdf'});const url=URL.createObjectURL(file);urls.push(url);const link=document.createElement('a');link.href=url;link.download=file.name;link.type=file.type;link.setAttribute('data-downloadurl',file.type+':'+file.name+':'+url);link.textContent=label;link.style.marginRight='12px';status.append(link);link.click();await new Promise(resolve=>setTimeout(resolve,1200));
    }
 
-  }catch(error){status.textContent='PDF konnte nicht erstellt werden. Bitte erneut versuchen. '+error.message}
+  }catch(error){status.textContent='PDF konnte nicht erstellt werden: '+(error?.message||'Der Browser konnte die Grafik nicht verarbeiten. Bitte die Seite neu laden und nochmals versuchen.')}
   finally{button.disabled=false}
  };
  button.onclick=()=>downloadPdfs();
