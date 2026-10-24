@@ -2019,7 +2019,7 @@ prepareMonochromeHeads();
    urls.forEach(URL.revokeObjectURL);urls=[];status.textContent='Beide PDFs sind bereit. Falls ein Download fehlt, hier nochmals anklicken: ';
    const date=typeof state!=='undefined'?state.start:'';
    for(const [blob,label,suffix] of [[dark,'Schwarze Ansicht','Ansicht'],[white,'Druckversion','Druck']]){
-    const url=URL.createObjectURL(blob);urls.push(url);const link=document.createElement('a');link.href=url;link.download='wochenplan-'+(weekCycle.selected+1)+(suffix==='Druck'?'-druck':'')+'.pdf';link.textContent=label;link.style.marginRight='12px';status.append(link);link.click();await new Promise(resolve=>setTimeout(resolve,1200));
+    const url=URL.createObjectURL(blob);urls.push(url);const link=document.createElement('a');link.href=url;link.download='Wochenplan-'+(weekCycle.selected+1)+(suffix==='Druck'?'-druck':'')+'.pdf';link.textContent=label;link.style.marginRight='12px';status.append(link);link.click();await new Promise(resolve=>setTimeout(resolve,1200));
    }
 
   }catch(error){status.textContent='PDF konnte nicht erstellt werden. Bitte erneut versuchen. '+error.message}
