@@ -1984,9 +1984,13 @@ prepareMonochromeHeads();
    headDimensions.forEach(({head})=>head.style.visibility='hidden');
    sourceHeads.forEach(({x,y,width,height})=>{const image=doc.createElement('canvas');image.width=logoCanvas.width;image.height=logoCanvas.height;image.getContext('2d').drawImage(logoCanvas,0,0);image.style.cssText='position:absolute;left:'+(x-width/2)+'px;top:'+(y-height/2)+'px;width:'+width+'px;height:'+height+'px;max-width:none;object-fit:contain;z-index:5;pointer-events:none';clone.append(image)});
    if(mode!=='print'){
-    const ellipse=doc.createElement('canvas');ellipse.width=Math.ceil(exportTitle.clientWidth*3);ellipse.height=Math.ceil(exportTitle.clientHeight*3);const context=ellipse.getContext('2d'),w=ellipse.width,h=ellipse.height;
-    const gradient=context.createRadialGradient(w/2,h/2,0,w/2,h/2,w/2);gradient.addColorStop(0,'#8c1c24');gradient.addColorStop(.55,'#641219');gradient.addColorStop(1,'#080808');context.fillStyle=gradient;context.beginPath();context.ellipse(w/2,h/2,w/2,h/2,0,0,Math.PI*2);context.fill();
-    exportTitle.style.setProperty('background','url("'+ellipse.toDataURL('image/png')+'") center/100% 100% no-repeat','important');
+    const ellipse=doc.createElement('canvas'),width=exportTitle.clientWidth,height=exportTitle.clientHeight;
+    ellipse.width=Math.ceil(width*3);ellipse.height=Math.ceil(height*3);const context=ellipse.getContext('2d');
+    context.scale(3,3);context.translate(width/2,height/2);context.scale(width/2-1,height/2-1);
+    const gradient=context.createRadialGradient(0,0,0,0,0,1);gradient.addColorStop(0,'#70171d');gradient.addColorStop(.55,'#65151a');gradient.addColorStop(.82,'#3b1014');gradient.addColorStop(1,'#080808');
+    context.fillStyle=gradient;context.beginPath();context.arc(0,0,1,0,Math.PI*2);context.fill();
+    exportTitle.style.setProperty('background','none','important');exportTitle.style.setProperty('border-color','transparent','important');exportTitle.style.setProperty('border-radius','0','important');exportTitle.style.setProperty('overflow','visible','important');exportTitle.style.position='relative';exportTitle.style.zIndex='0';
+    ellipse.style.cssText='position:absolute;left:0;top:0;width:'+width+'px;height:'+height+'px;z-index:-1;pointer-events:none';exportTitle.append(ellipse);
    }
    if(mode!=='print'){
     const image=doc.createElement('canvas');image.width=1680;image.height=2040;
