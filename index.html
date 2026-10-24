@@ -1301,6 +1301,12 @@ function fitMenuText(){
    cell.desc.style.alignSelf='start';
    cell.desc.style.textAlign='center';
  });
+ // Recheck after grid layout: web fonts and intrinsic column sizing can change wrapping.
+ function finalDescriptionFit(value){
+  menus.forEach(cell=>{cell.desc.style.fontSize=(state.style.bodySize-1)*value+'px'});
+  return menus.every(cell=>cell.content.offsetHeight<=cell.height+.25&&cell.desc.scrollWidth<=cell.width+1);
+ }
+ if(!finalDescriptionFit(scale)){let low=0,high=scale;for(let i=0;i<16;i++){const mid=(low+high)/2;if(finalDescriptionFit(mid))low=mid;else high=mid}finalDescriptionFit(low)}
  function fitLabels(scale){
    labels.forEach(cell=>{cell.number.style.fontSize=25*scale+'px';cell.content.style.fontSize=12*scale+'px'});
    return labels.every(cell=>cell.content.offsetHeight<=cell.height&&cell.content.scrollWidth<=cell.width);
@@ -2002,4 +2008,17 @@ prepareMonochromeHeads();
 #paper .extra [data-key="b0p2"],#paper .extra [data-key="b1p3"],#paper .extra [data-key="b1p5"]{font-weight:600!important;color:inherit}
 #paper .fineprint{font-size:8.5px;color:#aaa398;margin-top:8px}
 @media print{#paper .extras,#paper .extra{font-size:9px}#paper .extra .extra-title{font-size:10px}}
-</style></body></html>
+</style><style id="brightBrandAndTitleEllipse20261024">
+@media screen{
+ #paper .brandline .logohead{opacity:1!important;filter:brightness(1.7) saturate(1.1)!important}
+ #paper [data-artwork="year"]{opacity:1!important;color:#ff5d62!important;-webkit-text-fill-color:#ff5d62!important;filter:brightness(1.25)!important}
+ #paper .doc-title{display:table;margin:3px auto 14px!important;padding:9px 44px 11px!important;border-radius:50%!important;background:linear-gradient(145deg,#a52530,#67131c)!important;border:1px solid #bd6a46;color:#f2d694!important;-webkit-text-fill-color:#f2d694!important;box-shadow:inset 0 1px 0 #ffffff18,0 4px 16px #0004;line-height:1.12!important}
+}
+</style><style id="brighterMenuTypography20261024">@media screen{
+ #paper{color:#f6f2eb!important;--ink:#f6f2eb!important}
+ #paper .desc,#paper .included,#paper .brandservice,#paper .dateprice{color:#f6f2eb!important}
+ #paper .extras,#paper .extra,#paper .extra p{color:#f2ede4!important}
+ #paper .extra .extra-title{color:#ffe0a6!important}
+ #paper .fineprint{color:#e4ddd0!important}
+ #paper .menugrid .dish,#paper .menugrid .number{color:#f0d699!important;-webkit-text-fill-color:#f0d699!important}
+}</style></body></html>
