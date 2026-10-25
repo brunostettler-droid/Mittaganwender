@@ -1338,7 +1338,8 @@ window.addEventListener('beforeprint',preparePrint);
 window.addEventListener('afterprint',checkSize);
 if(document.fonts)document.fonts.ready.then(checkSize);
 function sync(){render();if(typeof refreshCatalogControls==='function')refreshCatalogControls()}
-window.addEventListener('resize',fit);
+window.addEventListener('resize',()=>{fit();checkSize()});
+window.addEventListener('load',checkSize);
 render();
 if(document.modelContext?.registerTool){const lifecycle=new AbortController();const register=t=>{try{Promise.resolve(document.modelContext.registerTool(t,{signal:lifecycle.signal})).catch(()=>{})}catch(e){}};register({name:'read_menu_plan',description:'Read the current editable menu plan and its design.',inputSchema:{type:'object',properties:{},additionalProperties:false},annotations:{readOnlyHint:true,untrustedContentHint:true},execute:()=>clone(state)});register({name:'update_menu_texts',description:'Update existing menu text fields in the visible plan and save the local draft.',inputSchema:{type:'object',properties:{texts:{type:'object',additionalProperties:{type:'string'}}},required:['texts'],additionalProperties:false},annotations:{readOnlyHint:false},execute:input=>{if(!input?.texts||Array.isArray(input.texts)||typeof input.texts!=='object')throw Error('texts must be an object');for(const[k,v]of Object.entries(input.texts))if(!/^m[0-3][0-4](title|desc)$/.test(k)||!(k in defaults.texts)||typeof v!=='string'||v.length>10000)throw Error('Invalid text field');if(!allowMenuChange(input.texts))throw Error('Massaman, gelbes Curry und Penang dürfen auch nicht zu zweit am selben Tag stehen.');lastEdit=null;remember('tool');Object.assign(state.texts,input.texts);sync();persist();return{updated:Object.keys(input.texts)}}});window.addEventListener('pagehide',()=>lifecycle.abort(),{once:true})}
 
