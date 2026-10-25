@@ -1216,6 +1216,10 @@ function normalizeMenuNotes(){
   const titleKey=`m${r}${c}title`,descKey=`m${r}${c}desc`,notes=[];
   state.texts[titleKey]=state.texts[titleKey].replace(/\s*\(([^()]*)\)/g,(_,note)=>{notes.push('('+note.trim()+')');return ' ';}).replace(/[ \t]{2,}/g,' ').trim();
   state.texts[descKey]=menuNotesLast([state.texts[descKey],...notes].join(' '));
+  if(/curry fried rice/i.test(state.texts[titleKey])&&/gelb/i.test(state.texts[titleKey])){
+   state.texts[titleKey]=state.texts[titleKey].replace(/mit gelbem Curry/i,'gelb');
+   if(/Ananasstückchen und Cashew-Nüssen/i.test(state.texts[descKey]))state.texts[descKey]='Gebratener Reis mit Ananas und Cashewnüssen (leicht pikant)';
+  }
   if(/pad thai/i.test(state.texts[titleKey]))state.texts[descKey]=state.texts[descKey].replace(/\bEi(?:\s+und|\s*,)\s*Erdnüssen/gi,'Ei, Sojasprossen und Erdnüssen');
  }
 }
@@ -1270,21 +1274,22 @@ function fitMenuText(){
      menus.push({content,dish,desc,height,width});
    }else labels.push({content,height,width,number:content.querySelector('.number')});
  });
- // Share the largest heading size that keeps every title on one line.
- let headingSize=state.style.menuTitleSize-1;
+ // Fit each heading separately: changing one menu must not resize the others.
  menus.forEach(cell=>{
-   cell.dish.style.fontSize=headingSize+'px';
+   cell.headingSize=state.style.menuTitleSize-1;
+   cell.dish.style.fontSize=cell.headingSize+'px';
    if(cell.dish.scrollWidth>cell.width){
-     let low=1,high=headingSize;
+     let low=1,high=cell.headingSize;
      for(let i=0;i<16;i++){const mid=(low+high)/2;cell.dish.style.fontSize=mid+'px';if(cell.dish.scrollWidth<=cell.width)low=mid;else high=mid}
-     headingSize=low;
+     cell.headingSize=low;
    }
+   cell.dish.style.fontSize=cell.headingSize+'px';
  });
  function measure(scale){
    let headingHeight=0,ok=true;
    menus.forEach(cell=>{
-     // Keep menu headings identical across all five plans; fit descriptions only.
-     cell.dish.style.fontSize=headingSize+'px';
+     // Preserve each heading’s own fitted size while measuring descriptions.
+     cell.dish.style.fontSize=cell.headingSize+'px';
      cell.desc.style.fontSize=(state.style.bodySize-1)*scale+'px';
      headingHeight=Math.max(headingHeight,cell.dish.offsetHeight);
    });
@@ -1360,11 +1365,12 @@ function selectedRecipe(){return allRecipes().find(x=>x.dish===dishSelect.value)
 function recipeText(recipe,protein){
  const names={Poulet:'Poulet',Rind:'Rindfleisch',Schwein:'Schweinefleisch',Crevetten:'Crevetten',Fisch:'Fischfilets',Tofu:'Tofu',Gemüse:'Gemüse',Ente:'Entenbrust'};
  const ingredient=names[protein];
- let description=neutralRecipeDescription(recipe.description);
+ const yellowRice=/curry fried rice/i.test(recipe.dish)&&/gelb/i.test(recipe.dish);
+ let description=yellowRice?'Gebratener Reis mit Ananas und Cashewnüssen (leicht pikant)':neutralRecipeDescription(recipe.description);
  const vegetable=protein==='Gemüse';
  const alreadyHasVegetables=/\bGemüse(?:stückchen)?\b/i.test(description);
  const riceOrNoodles=/fried\s*(?:rice|noodles)|pad\s*(?:thai|ki\s*mao)|eintopf/i.test(recipe.dish);
- const base=description.match(/\b(?:Reiseintopf|Eintopf|Weizennudeln|Reisnudeln|Nudeln)\b/i);
+ const base=description.match(/\b(?:Reiseintopf|Eintopf|Weizennudeln|Reisnudeln|Nudeln|Reis)\b/i);
  if(vegetable&&alreadyHasVegetables){
    // Vegetables already follow the dish; do not list them twice.
  }else if(riceOrNoodles&&base){
@@ -1376,7 +1382,7 @@ function recipeText(recipe,protein){
  }else{
    description=ingredient+(description?(/^(?:Mit|An|In|Auf)\b/.test(description)?' '+description.charAt(0).toLowerCase()+description.slice(1):' · '+description):'');
  }
- const title=/Austernsauce/i.test(recipe.dish)?ingredient+' an Austernsauce':recipe.dish+' mit '+ingredient;
+ const title=/Austernsauce/i.test(recipe.dish)?ingredient+' an Austernsauce':(yellowRice?'Curry Fried Rice gelb':recipe.dish)+' mit '+ingredient;
  return {title,description:menuNotesLast(description)};
 }
 function previewRecipe(){const recipe=selectedRecipe();$('#applyRecipe').disabled=!recipe;if(!recipe){$('#adaptedRecipe').hidden=true;$('#pickerStatus').textContent='Keine Gerichte vorhanden. Füge ein eigenes Gericht hinzu.';return}committedDish=dishSelect.value;$('#adaptedRecipe').hidden=false;$('#pickerStatus').textContent=''}
