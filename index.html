@@ -2094,6 +2094,17 @@ prepareMonochromeHeads();
   const img=await pdf.embedPng(canvas.toDataURL('image/png'));
   const margin=12,scale=Math.min((page.getWidth()-2*margin)/img.width,(page.getHeight()-2*margin)/img.height),width=img.width*scale,height=img.height*scale;
   page.drawImage(img,{x:(page.getWidth()-width)/2,y:page.getHeight()-margin-height,width,height});
+  if(mode!=='print'){
+   const currentWeek=typeof selectedWeek!=='undefined'?selectedWeek:null;
+   const weekValue=currentWeek?String(currentWeek.getFullYear())+'-'+String(currentWeek.getMonth()+1).padStart(2,'0')+'-'+String(currentWeek.getDate()).padStart(2,'0'):document.getElementById('weekFrom')?.value;
+   const printUrl=new URL('https://brunostettler-droid.github.io/webshop1/mittag.html');
+   if(weekValue)printUrl.searchParams.set('woche',weekValue);printUrl.searchParams.set('druck','1');
+   const label='Druckversion mit weissem Hintergrund',font=await pdf.embedFont(PDFLib.StandardFonts.Helvetica),size=7,labelWidth=font.widthOfTextAtSize(label,size);
+   page.drawText(label,{x:12,y:3,size,font,color:PDFLib.rgb(.18,.18,.18)});
+   page.drawLine({start:{x:12,y:2},end:{x:12+labelWidth,y:2},thickness:.4,color:PDFLib.rgb(.18,.18,.18)});
+   const annotation=pdf.context.register(pdf.context.obj({Type:'Annot',Subtype:'Link',Rect:[12,1,12+labelWidth,11],Border:[0,0,0],A:{Type:'Action',S:'URI',URI:PDFLib.PDFString.of(printUrl.href)}}));
+   page.node.set(PDFLib.PDFName.of('Annots'),pdf.context.obj([annotation]));
+  }
   pdf.setTitle(mode==='print'?'Mittagsmenu – Druckversion':'Mittagsmenu – Schwarze Ansicht');
   return new Blob([await pdf.save()],{type:'application/pdf'});
  }
