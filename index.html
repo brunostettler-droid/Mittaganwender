@@ -1137,7 +1137,7 @@ function cleanMenuDescription(value,title=''){
  let description=neutralRecipeDescription(String(value));
  description=description.replace(/\b(Reiseintopf|Reis|Weizennudeln|Reisnudeln)\s+(?=grünen Bohnen)/gi,'$1 mit ');
  description=description.replace(/frischen Chilis grünen Bohnen/gi,'frischen Chilis, grünen Bohnen');
- description=description.replace(/\b(Curry|Sauce)\s+und Gemüse(?=\s*(?:\(|$))/gi,'$1');
+ if(/(?:Curry|Süss-sauer).*mit Gemüse$/i.test(title))description=description.replace(/\b(Curry|Sauce)\s+und Gemüse(?=\s*(?:\(|$))/gi,'$1');
  if(/pad thai/i.test(title))description=description.replace(/\bEi(?:\s+und|\s*,)\s*Erdnüssen/gi,'Ei, Sojasprossen und Erdnüssen');
  return menuNotesLast(description);
 }
@@ -1147,6 +1147,7 @@ function normalizeStoredMenu(texts){
   if(typeof texts[tk]!=='string'||typeof texts[dk]!=='string')continue;
   const parts=texts[tk].match(/^(.*?) mit (Poulet|Rindfleisch|Schweinefleisch|Crevetten|Fischfilets|Tofu|Gemüse|Entenbrust)$/);
   if(parts)texts[tk]=menuDisplayDish(parts[1])+' mit '+parts[2];
+  texts[dk]=cleanMenuDescription(texts[dk],texts[tk]);
   if(/^Süss-sauer scharf mit /i.test(texts[tk])&&/^Mit Ananas- und Gemüsestückchen an feinster süss-sauer Sauce(?: \(.*?\))?$/i.test(texts[dk])){
    const recipes=[...(state.editedRecipes||[]),...(state.customRecipes||[]),...MENU_CATALOG];
    const exact=recipes.find(recipe=>/^Süss-sauer scharf$/i.test(recipe.dish));
@@ -1156,7 +1157,7 @@ function normalizeStoredMenu(texts){
  }
 }
 function neutralRecipeDescription(value){
- return value.replace(/^«[^»]+»[, ]*/,'')
+ return value.replace(/^«(?:Pad Thai|Fried Rice|Fried Noodles|Pad Ki Mao|Pad Krapao|Curry Fried Rice)»[, ]*/i,'')
  .replace(/\b(?:Poulet(?:fleisch|brust|stückchen)?|Hähnchen(?:fleisch|brust)?|Rind(?:fleisch)?|Schwein(?:efleisch|sfleisch|fleisch)?|Crevetten|Garnelen|Fisch(?:filets?)?|Entenbrust|Entenfleisch|Ente|Tofuwürfelchen|Tofu)\b/gi,'')
  .replace(/\bVegetarisches\s*/gi,'')
  .replace(/\bmit\s*(?:,|und\b)\s*/gi,'mit ')
