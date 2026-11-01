@@ -1122,6 +1122,39 @@ const fonts=['Arial','Helvetica','Verdana','Trebuchet MS','Georgia','Times New R
 const defaults={version:1,customRecipes:[],style:{headX:0,headY:0,headSize:130,headOpacity:100,headColor:'#ed1212',backgroundSize:100,backgroundOpacity:24,backgroundColor:'#ed1212',font:'Arial',headingFont:'Arial',titleSize:38,menuTitleSize:14,bodySize:12.5,smallSize:10.5,padding:6,rowHeight:70,leading:1.2,accent:'#ff525b',header:'#be1824',headerText:'#ffffff',ink:'#f5f5f5',paper:'#101012',stripe:'#202023',border:'#45454b'},start:'2026-09-28',prices:['17.00','17.00','17.00','17.00'],takeaway:'15.00',texts:{brand:'thai•foodkurier',service:'Heimliefer- und Partyservice',title:'Mittagsmenu',included:'Lieferung und Parfumreis inbegriffen. Gebratene Eiernudeln als Beilage: zusätzlich CHF 2.00.',fineprint:'Alle Gerichte werden von unseren thailändischen Köchinnen aus frischen Zutaten zubereitet. Alle Preise in CHF.'}};
 INITIAL_CONTENT.menus.forEach((row,r)=>row.forEach((item,c)=>{defaults.texts[`m${r}${c}title`]=item[0];defaults.texts[`m${r}${c}desc`]=item[1]}));
 INITIAL_CONTENT.blocks.forEach((block,b)=>block.forEach((item,i)=>defaults.texts[`b${b}p${i}`]=item[0]));
+function menuDisplayDish(value){
+ return String(value).trim()
+ .replace(/^Penang(?:-Kokosmilch)?-Curry$/i,'Penang-Curry')
+ .replace(/^Massaman(?:-Kokosmilch)?-Curry$/i,'Massaman-Curry')
+ .replace(/^Gelbes Kokosmilch-Curry$/i,'Gelbes Curry')
+ .replace(/^Grünes Kokosmilch-Curry$/i,'Grünes Curry')
+ .replace(/^Rotes Kokosmilch-Curry$/i,'Rotes Kokos-Curry')
+ .replace(/^Knoblauch und weisser Pfeffer$/i,'Knoblauch-Pfeffer')
+ .replace(/^Curry Fried Rice mit gelbem Curry$/i,'Curry Fried Rice gelb')
+ .replace(/^Curry Fried Rice mit rotem Curry$/i,'Curry Fried Rice rot');
+}
+function cleanMenuDescription(value,title=''){
+ let description=neutralRecipeDescription(String(value));
+ description=description.replace(/\b(Reiseintopf|Reis|Weizennudeln|Reisnudeln)\s+(?=grünen Bohnen)/gi,'$1 mit ');
+ description=description.replace(/frischen Chilis grünen Bohnen/gi,'frischen Chilis, grünen Bohnen');
+ description=description.replace(/\b(Curry|Sauce)\s+und Gemüse(?=\s*(?:\(|$))/gi,'$1');
+ if(/pad thai/i.test(title))description=description.replace(/\bEi(?:\s+und|\s*,)\s*Erdnüssen/gi,'Ei, Sojasprossen und Erdnüssen');
+ return menuNotesLast(description);
+}
+function normalizeStoredMenu(texts){
+ for(let r=0;r<4;r++)for(let c=0;c<5;c++){
+  const tk=`m${r}${c}title`,dk=`m${r}${c}desc`;
+  if(typeof texts[tk]!=='string'||typeof texts[dk]!=='string')continue;
+  const parts=texts[tk].match(/^(.*?) mit (Poulet|Rindfleisch|Schweinefleisch|Crevetten|Fischfilets|Tofu|Gemüse|Entenbrust)$/);
+  if(parts)texts[tk]=menuDisplayDish(parts[1])+' mit '+parts[2];
+  if(/^Süss-sauer scharf mit /i.test(texts[tk])&&/^Mit Ananas- und Gemüsestückchen an feinster süss-sauer Sauce(?: \(.*?\))?$/i.test(texts[dk])){
+   const recipes=[...(state.editedRecipes||[]),...(state.customRecipes||[]),...MENU_CATALOG];
+   const exact=recipes.find(recipe=>/^Süss-sauer scharf$/i.test(recipe.dish));
+   if(exact)texts[dk]=exact.description;
+  }
+  texts[dk]=cleanMenuDescription(texts[dk],texts[tk]);
+ }
+}
 function neutralRecipeDescription(value){
  return value.replace(/^«[^»]+»[, ]*/,'')
  .replace(/\b(?:Poulet(?:fleisch|brust|stückchen)?|Hähnchen(?:fleisch|brust)?|Rind(?:fleisch)?|Schwein(?:efleisch|sfleisch|fleisch)?|Crevetten|Garnelen|Fisch(?:filets?)?|Entenbrust|Entenfleisch|Ente|Tofuwürfelchen|Tofu)\b/gi,'')
@@ -1212,6 +1245,7 @@ function menuNotesLast(value){
  return [body,...notes].filter(Boolean).join(' ');
 }
 function normalizeMenuNotes(){
+ normalizeStoredMenu(state.texts);
  for(let r=0;r<4;r++)for(let c=0;c<5;c++){
   const titleKey=`m${r}${c}title`,descKey=`m${r}${c}desc`,notes=[];
   state.texts[titleKey]=state.texts[titleKey].replace(/\s*\(([^()]*)\)/g,(_,note)=>{notes.push('('+note.trim()+')');return ' ';}).replace(/[ \t]{2,}/g,' ').trim();
@@ -1229,7 +1263,7 @@ function text(key,tag='div',className=''){
  el.contentEditable='plaintext-only';el.setAttribute('role','textbox');el.setAttribute('aria-label',labels[key]);
  el.addEventListener('focus',()=>{lastEdit=null});
  el.addEventListener('input',()=>{const patch={[key]:el.innerText};if(!allowMenuChange(patch)){el.textContent=state.texts[key];return}remember(key);state.texts[key]=el.innerText;persist()});
- el.addEventListener('blur',()=>{normalizeMenuNotes();document.querySelectorAll('#paper [data-key]').forEach(field=>{field.textContent=state.texts[field.dataset.key]});persist()});return el;
+ el.addEventListener('blur',()=>{normalizeMenuNotes();document.querySelectorAll('#paper [data-key]').forEach(field=>{field.textContent=state.texts[field.dataset.key]});persist();checkSize()});return el;
 }
 function node(tag,cls,parent){const el=document.createElement(tag);el.className=cls;if(parent)parent.append(el);return el}
 function date(n){const d=new Date(state.start+'T12:00:00');d.setDate(d.getDate()+n);return d}
@@ -1285,39 +1319,26 @@ function fitMenuText(){
    }
    cell.dish.style.fontSize=cell.headingSize+'px';
  });
- function measure(scale){
-   let headingHeight=0,ok=true;
-   menus.forEach(cell=>{
-     // Preserve each heading’s own fitted size while measuring descriptions.
-     cell.dish.style.fontSize=cell.headingSize+'px';
-     cell.desc.style.fontSize=(state.style.bodySize-1)*scale+'px';
-     headingHeight=Math.max(headingHeight,cell.dish.offsetHeight);
-   });
-   menus.forEach(cell=>{
-     if(headingHeight+3*scale+cell.desc.offsetHeight>cell.height||cell.dish.scrollWidth>cell.width||cell.desc.scrollWidth>cell.width)ok=false;
-   });
-   return {headingHeight,ok};
- }
- let scale=1,result=measure(1);
- if(!result.ok){let low=0,high=1;for(let i=0;i<16;i++){const mid=(low+high)/2;if(measure(mid).ok)low=mid;else high=mid}scale=low;result=measure(scale)}
+ // Fit descriptions independently too; a long menu must not shrink its neighbours.
  menus.forEach(cell=>{
    cell.content.style.display='grid';cell.content.style.height='auto';
-   cell.content.style.gridTemplateRows='auto auto';
-   cell.content.style.rowGap=3*scale+'px';
-   cell.desc.style.alignSelf='start';
-   cell.desc.style.textAlign='center';
- });
- // Recheck after grid layout: web fonts and intrinsic column sizing can change wrapping.
- function finalDescriptionFit(value){
-  menus.forEach(cell=>{cell.desc.style.fontSize=(state.style.bodySize-1)*value+'px'});
-  return menus.every(cell=>cell.content.offsetHeight<=cell.height+.25&&cell.desc.scrollWidth<=cell.width+1);
- }
- if(!finalDescriptionFit(scale)){let low=0,high=scale;for(let i=0;i<16;i++){const mid=(low+high)/2;if(finalDescriptionFit(mid))low=mid;else high=mid}finalDescriptionFit(low)}
- // Centre two-line descriptions against the three-line text area.
- menus.forEach(cell=>{
-  const line=parseFloat(getComputedStyle(cell.desc).lineHeight);
-  const lines=Math.round(cell.desc.offsetHeight/line);
-  if(lines===2){const shift=Math.min(line/2,Math.max(0,cell.height-cell.content.offsetHeight));cell.desc.style.transform='translateY('+shift+'px)'}
+   cell.content.style.gridTemplateRows='auto auto';cell.content.style.rowGap='3px';
+   cell.desc.style.alignSelf='start';cell.desc.style.textAlign='center';
+   const base=state.style.bodySize-1;
+   const fits=size=>{
+     cell.desc.style.fontSize=size+'px';
+     return cell.content.offsetHeight<=cell.height+.25&&cell.desc.scrollWidth<=cell.width+1;
+   };
+   if(!fits(base)){
+     let low=1,high=base;
+     for(let i=0;i<16;i++){const mid=(low+high)/2;if(fits(mid))low=mid;else high=mid}
+     fits(low);
+   }
+   const line=parseFloat(getComputedStyle(cell.desc).lineHeight);
+   if(line&&Math.round(cell.desc.offsetHeight/line)===2){
+     const shift=Math.min(line/2,Math.max(0,cell.height-cell.content.offsetHeight));
+     cell.desc.style.transform='translateY('+shift+'px)';
+   }
  });
  function fitLabels(scale){
    labels.forEach(cell=>{cell.number.style.fontSize=25*scale+'px';cell.content.style.fontSize=12*scale+'px'});
@@ -1366,25 +1387,12 @@ function selectedRecipe(){return allRecipes().find(x=>x.dish===dishSelect.value)
 function recipeText(recipe,protein){
  const names={Poulet:'Poulet',Rind:'Rindfleisch',Schwein:'Schweinefleisch',Crevetten:'Crevetten',Fisch:'Fischfilets',Tofu:'Tofu',Gemüse:'Gemüse',Ente:'Entenbrust'};
  const ingredient=names[protein];
- const yellowRice=/curry fried rice/i.test(recipe.dish)&&/gelb/i.test(recipe.dish);
- let description=yellowRice?'Gebratener Reis mit Ananas und Cashewnüssen (leicht pikant)':neutralRecipeDescription(recipe.description);
- const vegetable=protein==='Gemüse';
- const alreadyHasVegetables=/\bGemüse(?:stückchen)?\b/i.test(description);
- const riceOrNoodles=/fried\s*(?:rice|noodles)|pad\s*(?:thai|ki\s*mao)|eintopf/i.test(recipe.dish);
- const base=description.match(/\b(?:Reiseintopf|Eintopf|Weizennudeln|Reisnudeln|Nudeln|Reis)\b/i);
- if(vegetable&&alreadyHasVegetables){
-   // Vegetables already follow the dish; do not list them twice.
- }else if(riceOrNoodles&&base){
-   const end=base.index+base[0].length;
-   const rest=description.slice(end).trim().replace(/^mit\s+/i,'');
-   description=description.slice(0,end)+' mit '+ingredient+(rest?(/^(?:an|in|auf)\b/i.test(rest)?' ':/\bund\b/i.test(rest)?', ':' und ')+rest:'');
- }else if(vegetable||riceOrNoodles){
-   description=description?description.replace(/[.;]\s*$/,'')+(/\bmit\b/i.test(description)?' und ':' mit ')+ingredient:ingredient;
- }else{
-   description=ingredient+(description?(/^(?:Mit|An|In|Auf)\b/.test(description)?' '+description.charAt(0).toLowerCase()+description.slice(1):' · '+description):'');
- }
- const title=/Austernsauce/i.test(recipe.dish)?ingredient+' an Austernsauce':(yellowRice?'Curry Fried Rice gelb':recipe.dish)+' mit '+ingredient;
- return {title,description:menuNotesLast(description)};
+ const dish=menuDisplayDish(recipe.dish);
+ const title=/Austernsauce/i.test(dish)?ingredient+' an Austernsauce':dish+' mit '+ingredient;
+ const yellowRice=/curry fried rice/i.test(dish)&&/gelb/i.test(dish);
+ const description=yellowRice?'Gebratener Reis mit Ananas und Cashewnüssen (leicht pikant)':cleanMenuDescription(recipe.description,title);
+ // The selected ingredient is already in the title. Never append it to the recipe.
+ return {title,description};
 }
 function previewRecipe(){const recipe=selectedRecipe();$('#applyRecipe').disabled=!recipe;if(!recipe){$('#adaptedRecipe').hidden=true;$('#pickerStatus').textContent='Keine Gerichte vorhanden. Füge ein eigenes Gericht hinzu.';return}committedDish=dishSelect.value;$('#adaptedRecipe').hidden=false;$('#pickerStatus').textContent=''}
 function populateRecipes(){previewRecipe()}
@@ -1611,19 +1619,8 @@ document.getElementById('exportMenuState').onclick=()=>{
 // Restore complete descriptions from the previous menu layout.
 const PREVIOUS_RECIPE_DESCRIPTIONS = ["Gebratene Weizennudeln mit frischem Gemüse", "Mit Thai-Auberginen und Bohnen an rotem Curry", "Mit zarten Bambussprossen und Ananas an rotem Kokosmilch-Curry (leicht pikant)", "Mit Thai-Auberginen und Basilikum an grünem Kokos-Curry (pikant)", "Mit Knoblauch und weissem Pfeffer gebraten, rassig gewürzt", "Mit Kartoffelstückchen und Erdnüssen an mildem «Massaman»-Kokos-Curry", "Gebratene Reisnudeln mit Ei und Erdnüssen", "Mit Kartoffelstückchen und Karotten an «Penang» Kokosmilch-Curry", "Mit Ananas- und Gemüsestückchen an feinster süss-sauer Sauce", "Mit zarten Bambussprossen an rotem Kokosmilch-Curry (leicht pikant)", "Mit zarten Bambussprossen an rotem Kokosmilch-Curry (leicht pikant)", "Mit frischem Broccoli und Pilzen an würziger Austernsauce", "Gebratene Weizennudeln mit frischen Chilis und Gemüse", "Gebratene Reisnudeln mit Ei und Erdnüssen", "Mit frischen Chilis und Thai-Basilikum gebraten (sehr scharf)", "Mit Ananas- und Gemüsestückchen an feinster süss-sauer Sauce", "Gelbes Kokosmilch-Curry mit Karottenstückchen", "Mit Thai-Basilikum an grünem Kokosmilch-Curry (pikant)", "«Massaman» Kokosmilch-Curry mit Gemüse und Erdnüssen", "Gebratener Reiseintopf mit rotem Curry und viel frischem Gemüse", "Gebraten mit Karottenstückchen an gelbem Kokosmilch-Curry", "Mit Zwiebeln und Tomaten an scharfer süss-sauer Sauce (sehr scharf)", "An Austernsauce mit Broccoli und Pilzen gebraten", "Gebraten mit Thai-Basilikum und Erbsen an grünem Kokosmilch-Curry", "Mit Thai-Basilikum und Erbsen an grünem Kokosmilch-Curry (pikant)", "Gebratene Weizennudeln mit frischem Gemüse", "Mit Thai-Basilikum und Erbsen an grünem Kokosmilch-Curry (pikant)", "Mit Kartoffelstückchen und Erdnüssen an «Massaman»-Kokosmilch-Curry (mild)", "Gebratener Reiseintopf mit viel frischem Gemüse und Ei", "Gebratene Weizennudeln mit viel frischem Gemüse", "Gebratene Reisnudeln mit Gemüse, Ei und Erdnüssen", "An gelbem Kokosmilch-Curry mit Karotten- und Ananasstückchen", "Mit zarten Bambussprossen an rotem Kokosmilch-Curry", "Mit Thai-Basilikum und Erbsen an grünem Kokosmilch-Curry", "Mit Kartoffelstückchen an gelbem Kokosmilch-Curry", "Mit weissem Pfeffer und Knoblauch gebraten, rassig gewürzt", "Mit frischen Chilis, Baby Corn und Cashew-Nüssen gebraten (sehr scharf)", "Mit Thai-Basilikum und Erbsen an grünem Kokosmilch-Curry", "Mit frischen Chilis und Thai-Basilikum gebraten (sehr scharf)", "An «Massaman» Kokosmilch-Curry mit Kartoffelstückchen und Erdnüssen", "Gebratener Reiseintopf mit Gemüse", "An rotem Curry gebratener Reiseintopf mit Gemüse", "Mit Kartoffelstückchen und Ananas an gelbem Kokosmilch-Curry", "«Massaman» Kokosmilch-Curry mit Kartoffelstückchen und Erdnüssen", "Gebratene Reisnudeln mit Ei und Erdnüssen", "Mit Ananas- und Gemüsestückchen an feinster süss-sauer Sauce", "Mit Thai-Basilikum und Erbsen an grünem Kokosmilch-Curry", "Mit Kartoffelstückchen und Ananas an gelbem Kokosmilch-Curry", "Mit Gemüsestückchen an feinster süss-sauer Sauce", "Mit Zwiebeln und Tomaten an scharfer süss-sauer Sauce (sehr scharf)", "Mit Karottenstückchen und Ananas an gelbem Kokosmilch-Curry", "An «Massaman» Kokosmilch-Curry mit Erdnüssen (mild)", "Mit frischem Chili und Thai-Basilikum gebraten (sehr scharf)", "Gebratene Reisnudeln mit Ei und Erdnüssen", "Gebratener Reiseintopf mit Gemüse und Ei", "Mit frischem Broccoli und Pilzen gebraten an würziger Austernsauce", "Gebratene Weizennudeln mit frischem Gemüse", "Kokosmilch-Curry mit Kartoffelstückchen (mild)", "Kokosmilch-Curry mit Karottenstückchen", "Gebratene Reisnudeln mit Gemüse, Ei und Erdnüssen", "Mit Gemüsestückchen an feinster süss-sauer Sauce", "Gebraten mit Thai-Basilikum an grünem Kokosmilch-Curry (pikant)", "Gemischt gebratenes Thai Gemüse mit Pilzen", "Mit zarten Bambussprossen und Ananas an rotem Kokosmilch-Curry (leicht pikant)", "Mit zarten Bambussprossen an rotem Kokosmilch-Curry (leicht pikant)", "Mit zarten Bambussprossen an rotem Kokosmilch-Curry (leicht pikant)", "Mit zarten Bambussprossen an rotem Kokosmilch-Curry"];
 function restoreMenuIngredientDetails(texts){
- for(let r=0;r<4;r++)for(let c=0;c<5;c++){
-  const key=`m${r}${c}desc`,title=texts[`m${r}${c}title`]||'',description=texts[key]||'';
-  if(!description.trim())continue;
-  const protein=['Poulet','Rind','Schwein','Crevetten','Fisch','Ente','Tofu','Gemüse'].find(name=>title.includes(name))||(/Vegetarisch/i.test(title)?'Gemüse':null);
-  if(!protein)continue;
-  const dish=/rotes|rotem|roten/i.test(title)?'Rotes Kokos-Curry':/grünes|grünem|grünen/i.test(title)?'Grünes Curry':/gelbes|gelbem|gelben/i.test(title)?'Gelbes Curry':/Massaman/i.test(title)?'Massaman-Curry':/Penang/i.test(title)?'Penang-Curry':null;
-  const recipe=MENU_CATALOG.find(item=>title.toLowerCase().includes(item.dish.toLowerCase())||item.dish===dish);
-  const original=INITIAL_CONTENT.menus[r][c];
-  const normalized=neutralRecipeDescription(description).replace(/^[·\s]+/,'');
-  const known=PREVIOUS_RECIPE_DESCRIPTIONS.some(value=>neutralRecipeDescription(value)===normalized)||title===original[0]&&description===original[1];
-  if(recipe&&known)texts[key]=recipeText(recipe,protein).description;
-  else if(!/Poulet|Hähnchen|Rind|Schwein|Crevetten|Garnelen|Fisch|Ente|Tofu/i.test(description))texts[key]=recipeText({dish:title,description},protein).description;
- }
+ // Preserve saved wording. Only remove known mechanical duplication.
+ normalizeStoredMenu(texts);
 }
 restoreMenuIngredientDetails(state.texts);
 if(typeof weekCycle!=='undefined')weekCycle.plans.forEach(restoreMenuIngredientDetails);
