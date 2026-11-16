@@ -144,7 +144,7 @@ body.user-resizing,body.user-resizing *{cursor:col-resize!important;user-select:
   text-shadow:none!important;filter:none!important;animation:none!important;
  }
 }
-</style><style id="monochromeOuterBorderRemoval">@media print{#paper#paper#paper{border:0!important;outline:0!important;border-radius:0!important;box-shadow:none!important}}</style></head><body><svg width="0" height="0" aria-hidden="true" style="position:absolute"><defs><filter id="headTint" color-interpolation-filters="sRGB"><feColorMatrix type="matrix" values="0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 1 0 0 0 0" result="ink"/><feFlood id="headTintColor" flood-color="#ed1212"/><feComposite operator="in" in2="ink"/></filter><filter id="backgroundTint" color-interpolation-filters="sRGB"><feColorMatrix type="matrix" values="0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 1 0 0 0 0" result="ink"/><feFlood id="backgroundTintColor" flood-color="#ed1212"/><feComposite operator="in" in2="ink"/></filter></defs></svg>
+</style><style id="monochromeOuterBorderRemoval">@media print{#paper#paper#paper{border:0!important;outline:0!important;border-radius:0!important;box-shadow:none!important}}</style><style>#paper .menugrid .dish:focus{overflow:visible!important;white-space:normal!important}</style></head><body><svg width="0" height="0" aria-hidden="true" style="position:absolute"><defs><filter id="headTint" color-interpolation-filters="sRGB"><feColorMatrix type="matrix" values="0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 1 0 0 0 0" result="ink"/><feFlood id="headTintColor" flood-color="#ed1212"/><feComposite operator="in" in2="ink"/></filter><filter id="backgroundTint" color-interpolation-filters="sRGB"><feColorMatrix type="matrix" values="0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 1 0 0 0 0" result="ink"/><feFlood id="backgroundTintColor" flood-color="#ed1212"/><feComposite operator="in" in2="ink"/></filter></defs></svg>
 
 
 <div class="workspace">
@@ -1145,8 +1145,6 @@ function normalizeStoredMenu(texts){
  for(let r=0;r<4;r++)for(let c=0;c<5;c++){
   const tk=`m${r}${c}title`,dk=`m${r}${c}desc`;
   if(typeof texts[tk]!=='string'||typeof texts[dk]!=='string')continue;
-  const parts=texts[tk].match(/^(.*?) mit (Poulet|Rindfleisch|Schweinefleisch|Crevetten|Fischfilets|Tofu|Gemüse|Entenbrust)$/);
-  if(parts)texts[tk]=menuDisplayDish(parts[1])+' mit '+parts[2];
   texts[dk]=cleanMenuDescription(texts[dk],texts[tk]);
   if(/^Süss-sauer scharf mit /i.test(texts[tk])&&/^Mit Ananas- und Gemüsestückchen an feinster süss-sauer Sauce(?: \(.*?\))?$/i.test(texts[dk])){
    const recipes=[...(state.editedRecipes||[]),...(state.customRecipes||[]),...MENU_CATALOG];
@@ -1195,13 +1193,13 @@ for(const r of x.editedRecipes){
 if(x.deletedRecipeIds===undefined)x.deletedRecipeIds=[];if(!Array.isArray(x.deletedRecipeIds)||x.deletedRecipeIds.length>2000||x.deletedRecipeIds.some(id=>typeof id!=='string'||id.length>150))throw Error('Ungültige gelöschte Gerichte.');return x}
 // The user edition owns its draft. The original draft is only read once to seed a separate copy.
 const USER_DRAFT_KEY='menu-studio-user-v1';
-let state=validate(clone(EMBEDDED_PLAN)),history=[],lastEdit=null;
+let state=validate(clone(EMBEDDED_PLAN)),history=[],lastEdit=null,loadedSavedMenu=false;
 try{
  const saved=localStorage.getItem(USER_DRAFT_KEY);
- if(saved){state=validate(JSON.parse(saved))}
+ if(saved){state=validate(JSON.parse(saved));loadedSavedMenu=true}
  else{
    const previous=localStorage.getItem('menu-studio-v1');
-   if(previous){try{state=validate(JSON.parse(previous))}catch{}}
+   if(previous){try{state=validate(JSON.parse(previous));loadedSavedMenu=true}catch{}}
    localStorage.setItem(USER_DRAFT_KEY,JSON.stringify(state));
  }
 }catch(e){void 0}
@@ -1214,7 +1212,7 @@ try{
  if(saved&&dateValue(saved.anchor)&&Number.isInteger(saved.selected)&&saved.selected>=0&&saved.selected<5&&Array.isArray(saved.plans)&&saved.plans.length===5&&saved.plans.every(plan=>plan&&menuKeys.every(key=>typeof plan[key]==='string')))weekCycle=saved;
 }catch{}
 // One-time correction: the existing edited plan belongs to slot 3.
-if(!weekCycle.originalPlanAssignedToThree){
+if(!loadedSavedMenu&&!weekCycle.originalPlanAssignedToThree){
  weekCycle.plans[weekCycle.selected]=captureWeekPlan();
  [weekCycle.plans[0],weekCycle.plans[2]]=[weekCycle.plans[2],weekCycle.plans[0]];
  if(weekCycle.selected===0)weekCycle.selected=2;
@@ -1247,24 +1245,18 @@ function menuNotesLast(value){
 }
 function normalizeMenuNotes(){
  normalizeStoredMenu(state.texts);
- for(let r=0;r<4;r++)for(let c=0;c<5;c++){
-  const titleKey=`m${r}${c}title`,descKey=`m${r}${c}desc`,notes=[];
-  state.texts[titleKey]=state.texts[titleKey].replace(/\s*\(([^()]*)\)/g,(_,note)=>{notes.push('('+note.trim()+')');return ' ';}).replace(/[ \t]{2,}/g,' ').trim();
-  state.texts[descKey]=menuNotesLast([state.texts[descKey],...notes].join(' '));
-  if(/curry fried rice/i.test(state.texts[titleKey])&&/gelb/i.test(state.texts[titleKey])){
-   state.texts[titleKey]=state.texts[titleKey].replace(/mit gelbem Curry/i,'gelb');
-   if(/Ananasstückchen und Cashew-Nüssen/i.test(state.texts[descKey]))state.texts[descKey]='Gebratener Reis mit Ananas und Cashewnüssen (leicht pikant)';
-  }
-  if(/pad thai/i.test(state.texts[titleKey]))state.texts[descKey]=state.texts[descKey].replace(/\bEi(?:\s+und|\s*,)\s*Erdnüssen/gi,'Ei, Sojasprossen und Erdnüssen');
- }
+}
+function shortTitle(key){
+ const value=state.texts[key];
+ return /^m[0-3][0-4]title$/.test(key)?value.replace(/\bRindfleisch\b/gi,'Rind').replace(/\bSchweinefleisch\b/gi,'Schwein').replace(/\bFischfilets?\b/gi,'Fisch'):value;
 }
 function text(key,tag='div',className=''){
- const el=document.createElement(tag);el.className=className;el.textContent=state.texts[key];el.dataset.key=key;
+ const el=document.createElement(tag);el.className=className;el.textContent=shortTitle(key);if(className==='dish')el.title=state.texts[key];el.dataset.key=key;
  if(!/^m[0-3][0-4](title|desc)$/.test(key))return el;
  el.contentEditable='plaintext-only';el.setAttribute('role','textbox');el.setAttribute('aria-label',labels[key]);
- el.addEventListener('focus',()=>{lastEdit=null});
+ el.addEventListener('focus',()=>{lastEdit=null;if(className==='dish')el.textContent=state.texts[key]});
  el.addEventListener('input',()=>{const patch={[key]:el.innerText};if(!allowMenuChange(patch)){el.textContent=state.texts[key];return}remember(key);state.texts[key]=el.innerText;persist()});
- el.addEventListener('blur',()=>{normalizeMenuNotes();document.querySelectorAll('#paper [data-key]').forEach(field=>{field.textContent=state.texts[field.dataset.key]});persist();checkSize()});return el;
+ el.addEventListener('blur',()=>{normalizeMenuNotes();document.querySelectorAll('#paper [data-key]').forEach(field=>{field.textContent=shortTitle(field.dataset.key)});persist();checkSize()});return el;
 }
 function node(tag,cls,parent){const el=document.createElement(tag);el.className=cls;if(parent)parent.append(el);return el}
 function date(n){const d=new Date(state.start+'T12:00:00');d.setDate(d.getDate()+n);return d}
@@ -1290,6 +1282,8 @@ function fitMenuText(){
      content.style.display='block';content.style.height='auto';content.style.flex='0 0 auto';content.style.width='100%';content.style.minWidth='0';
      frame.style.justifyContent='flex-start';
      dish.style.whiteSpace='nowrap';
+     dish.style.overflow='hidden';
+     dish.style.textOverflow='ellipsis';
      dish.style.letterSpacing='-0.3px';
      dish.style.marginBottom='0';
      // Avoid repeating the protein already named in the heading.
@@ -1309,17 +1303,8 @@ function fitMenuText(){
      menus.push({content,dish,desc,height,width});
    }else labels.push({content,height,width,number:content.querySelector('.number')});
  });
- // Fit each heading separately: changing one menu must not resize the others.
- menus.forEach(cell=>{
-   cell.headingSize=state.style.menuTitleSize-1;
-   cell.dish.style.fontSize=cell.headingSize+'px';
-   if(cell.dish.scrollWidth>cell.width){
-     let low=1,high=cell.headingSize;
-     for(let i=0;i<16;i++){const mid=(low+high)/2;cell.dish.style.fontSize=mid+'px';if(cell.dish.scrollWidth<=cell.width)low=mid;else high=mid}
-     cell.headingSize=low;
-   }
-   cell.dish.style.fontSize=cell.headingSize+'px';
- });
+ // Titles share the chosen font size. Long names wrap without rewriting.
+ menus.forEach(({dish})=>{dish.style.fontSize=(state.style.menuTitleSize-2.8)+'px'});
  // Fit descriptions independently too; a long menu must not shrink its neighbours.
  menus.forEach(cell=>{
    cell.content.style.display='grid';cell.content.style.height='auto';
@@ -1352,7 +1337,7 @@ let sizeFrame;
 function checkSize(){cancelAnimationFrame(sizeFrame);sizeFrame=requestAnimationFrame(updateSize)}
 function preparePrint(){
  normalizeMenuNotes();
- document.querySelectorAll('#paper [data-key]').forEach(field=>{field.textContent=state.texts[field.dataset.key]});
+ document.querySelectorAll('#paper [data-key]').forEach(field=>{field.textContent=shortTitle(field.dataset.key)});
  render();persist();updateSize();
 }
 $('#savePdf').onclick=()=>{document.activeElement?.blur();preparePrint();window.print()};
@@ -1630,13 +1615,13 @@ sync();persist();
 const PDF_REFERENCE_MENUS = {"m00title": "Fried Rice mit Crevetten", "m00desc": "Gebratener Reiseintopf mit Crevetten, Gemüse und Ei", "m01title": "Grünes Curry mit Fischfilets", "m01desc": "Fischfilets mit Thai-Basilikum und Erbsen an grünem Kokosmilch-Curry (pikant)", "m02title": "Rotes Kokos-Curry mit Crevetten", "m02desc": "Crevetten mit zarten Bambussprossen an rotem Kokosmilch-Curry (leicht pikant)", "m03title": "Rotes Kokos-Curry mit Entenbrust", "m03desc": "Entenbrust mit zarten Bambussprossen an rotem Kokosmilch-Curry (leicht pikant)", "m04title": "Süss-sauer scharf mit Fischfilets", "m04desc": "Fischfilets mit Tomaten, Baby-Corn und Zwiebeln (sehr scharf)", "m10title": "Pad Krapao mit Poulet", "m10desc": "Poulet mit frischen Chilis und Thai-Basilikum gebraten (sehr scharf)", "m11title": "Massaman-Curry mit Poulet", "m11desc": "Poulet mit Kartoffelstückchen und Erdnüssen an mildem «Massaman»-Kokos-Curry", "m12title": "Nam Prik Pao mit Poulet", "m12desc": "Poulet mit frischen Chilis, Baby Corn und Cashew-Nüssen gebraten (sehr scharf)", "m13title": "Gelbes Curry mit Poulet", "m13desc": "Poulet mit Karottenstückchen und Ananas an gelbem Kokosmilch-Curry", "m14title": "Grünes Curry mit Poulet", "m14desc": "Poulet mit Thai-Basilikum und Erbsen an grünem Kokosmilch-Curry (pikant)", "m20title": "Massaman-Curry mit Rindfleisch", "m20desc": "Rindfleisch mit Kartoffelstückchen und Erdnüssen an mildem «Massaman»-Kokos-Curry", "m21title": "Rotes Kokos-Curry mit Rindfleisch", "m21desc": "Rindfleisch mit zarten Bambussprossen an rotem Kokosmilch-Curry (leicht pikant)", "m22title": "Penang-Curry mit Rindfleisch", "m22desc": "Rindfleisch mit Kartoffelstückchen und Karotten an «Penang» Kokosmilch-Curry", "m23title": "Pad Thai mit Rindfleisch", "m23desc": "Gebratene Reisnudeln mit Rindfleisch, Ei und Erdnüssen", "m24title": "Fried Noodles mit Rindfleisch", "m24desc": "Gebratene Weizennudeln mit Rindfleisch und frischem Gemüse", "m30title": "Grünes Curry mit Tofu", "m30desc": "Tofu mit Thai-Basilikum und Erbsen an grünem Kokosmilch-Curry (pikant)", "m31title": "Pad Thai mit Gemüse", "m31desc": "Gebratene Reisnudeln mit Gemüse, Ei und Erdnüssen", "m32title": "Curry Fried Rice gelb mit Gemüse", "m32desc": "Mit Ananasstückchen, Cashew-Nüssen und Gemüse (leicht pikant)", "m33title": "Süss-sauer mit Tofu", "m33desc": "Tofu mit Ananas- und Gemüsestückchen an feinster süss-sauer Sauce", "m34title": "Massaman-Curry mit Gemüse", "m34desc": "Mit Kartoffelstückchen und Erdnüssen an mildem «Massaman»-Kokos-Curry und Gemüse"};
 const PDF_REFERENCE_KEY='menu-plan-exact-pdf-reference-2026-10-01-v1';
 try {
- if(!localStorage.getItem(PDF_REFERENCE_KEY)){
+ if(!loadedSavedMenu&&!localStorage.getItem(PDF_REFERENCE_KEY)){
   localStorage.setItem(PDF_REFERENCE_KEY+'-backup',JSON.stringify(state));
   Object.assign(state.texts,PDF_REFERENCE_MENUS);
   sync();persist();
   localStorage.setItem(PDF_REFERENCE_KEY,'applied');
  }
-}catch(error){Object.assign(state.texts,PDF_REFERENCE_MENUS);sync();}
+}catch(error){if(!loadedSavedMenu){Object.assign(state.texts,PDF_REFERENCE_MENUS);sync();}}
 </script><style id="monochromePrintTemplate">
 @media print{
  html,body{background:#fff!important;color:#000!important}
@@ -1810,7 +1795,7 @@ prepareMonochromeHeads();
 <script id="recoverPdfPlanToSlotFour">
 (()=>{
  const key='recovered-menuplan4-pdf-2026-10-11-v1';
- if(localStorage.getItem(key))return;
+ if(loadedSavedMenu||localStorage.getItem(key))return;
  const recovered={"m00title": "Rotes Kokos-Curry mit Entenbrust", "m00desc": "Entenbrust mit zarten Bambussprossen an rotem Kokosmilch-Curry (leicht pikant)", "m01title": "Rotes Curry mit Fischfilets", "m01desc": "Fischfilets mit zarten Bambussprossen an rotem Kokosmilch-Curry (leicht pikant)", "m02title": "Grünes Curry mit Schweinefleisch", "m02desc": "Schweinefleisch mit Thai-Basilikum und Erbsen an grünem Kokosmilch-Curry (pikant)", "m03title": "Gelbes Curry mit Crevetten", "m03desc": "Crevetten mit Karottenstückchen und Ananas an gelbem Kokosmilch-Curry", "m04title": "Süss-sauer scharf mit Fischfilets", "m04desc": "Fischfilets mit Ananas- und Gemüsestückchen an feinster süss-sauer Sauce", "m10title": "Süss-sauer mit Poulet", "m10desc": "Poulet mit Ananas- und Gemüsestückchen an feinster süss-sauer Sauce", "m11title": "Pad Thai mit Poulet", "m11desc": "Gebratene Reisnudeln mit Poulet, Ei und Erdnüssen", "m12title": "Nam Prik Pao mit Poulet", "m12desc": "Poulet mit frischen Chilis, Baby Corn und Cashew-Nüssen gebraten (sehr scharf)", "m13title": "Grünes Curry mit Poulet", "m13desc": "Poulet mit Thai-Basilikum und Erbsen an grünem Kokosmilch-Curry (pikant)", "m14title": "Massaman-Curry mit Poulet", "m14desc": "Poulet mit Kartoffelstückchen und Erdnüssen an mildem «Massaman»-Kokos-Curry", "m20title": "Massaman-Curry mit Rindfleisch", "m20desc": "Rindfleisch mit Kartoffelstückchen und Erdnüssen an mildem «Massaman»-Kokos-Curry", "m21title": "Penang-Curry mit Rindfleisch", "m21desc": "Rindfleisch mit Kartoffelstückchen und Karotten an «Penang» Kokosmilch-Curry", "m22title": "Fried Rice mit Rindfleisch", "m22desc": "Gebratener Reiseintopf mit Rindfleisch, Gemüse und Ei", "m23title": "Rindfleisch an Austernsauce", "m23desc": "Rindfleisch mit frischem Broccoli und Pilzen an würziger Austernsauce", "m24title": "Curry Fried Rice mit Rindfleisch", "m24desc": "Gebratener Reiseintopf mit Rindfleisch, rotem Curry und viel frischem Gemüse", "m30title": "Fried Noodles mit Gemüse", "m30desc": "Gebratene Weizennudeln mit frischem Gemüse", "m31title": "Süss-sauer mit Tofu", "m31desc": "Tofu mit Ananas- und Gemüsestückchen an feinster süss-sauer Sauce", "m32title": "Massaman-Curry mit Gemüse", "m32desc": "Mit Kartoffelstückchen und Erdnüssen an mildem «Massaman»-Kokos-Curry und Gemüse", "m33title": "Pad Thai mit Gemüse", "m33desc": "Gebratene Reisnudeln mit Gemüse, Ei und Erdnüssen", "m34title": "Gebratenes Thai-Gemüse mit Tofu", "m34desc": "Tofu · Gemischt gebratenes Thai Gemüse mit Pilzen"};
  // Keep both the prior cycle and the complete current draft for recovery.
  localStorage.setItem(key+'-backup',JSON.stringify({state,weekCycle}));
@@ -1837,7 +1822,7 @@ prepareMonochromeHeads();
 </style><script id="exactUserLayoutSnapshot">
 (()=>{
  const key='menu-exact-user-snapshot-2026-10-11-v1';
- if(localStorage.getItem(key))return;
+ if(loadedSavedMenu||localStorage.getItem(key))return;
  const snapshot={"version":1,"style":{"font":"Arial","headingFont":"Arial","titleSize":38,"menuTitleSize":14,"bodySize":12.5,"smallSize":10.5,"padding":6,"rowHeight":70,"leading":1.2,"accent":"#ff525b","header":"#be1824","headerText":"#ffffff","ink":"#f5f5f5","paper":"#101012","stripe":"#202023","border":"#45454b","headSize":229,"headOpacity":100,"headColor":"#ed1212","backgroundSize":100,"backgroundOpacity":24,"backgroundColor":"#ed1212","headX":7,"headY":39},"start":"2026-10-12","prices":["17.00","17.00","17.00","17.00"],"takeaway":"15.00","texts":{"brand":"thai•foodkurier","service":"Heimliefer- und Partyservice","title":"Mittagsmenu","included":"Lieferung und Parfumreis inbegriffen. Gebratene Eiernudeln als Beilage: zusätzlich CHF 2.00.","fineprint":"Alle Gerichte werden von unseren thailändischen Köchinnen aus frischen Zutaten zubereitet. Alle Preise in CHF.","m00title":"Rotes Kokos-Curry mit Entenbrust","m00desc":"Entenbrust mit zarten Bambussprossen an rotem Kokosmilch-Curry (leicht pikant)","m01title":"Rotes Curry mit Fischfilets","m01desc":"Fischfilets mit Thai-Auberginen und Bohnen an rotem Curry","m02title":"Grünes Curry mit Schweinefleisch","m02desc":"Schweinefleisch mit Thai-Basilikum und Erbsen an grünem Kokosmilch-Curry (pikant)","m03title":"Gelbes Curry mit Crevetten","m03desc":"Crevetten mit Karottenstückchen und Ananas an gelbem Kokosmilch-Curry","m04title":"Süss-sauer scharf mit Fischfilets","m04desc":"Fischfilets mit Ananas- und Gemüsestückchen an feinster süss-sauer Sauce","m10title":"Süss-sauer mit Poulet","m10desc":"Poulet mit Ananas- und Gemüsestückchen an feinster süss-sauer Sauce","m11title":"Pad Thai mit Poulet","m11desc":"Gebratene Reisnudeln mit Poulet, Ei und Erdnüssen","m12title":"Nam Prik Pao mit Poulet","m12desc":"Poulet mit frischen Chilis, Baby Corn und Cashew-Nüssen gebraten (sehr scharf)","m13title":"Grünes Curry mit Poulet","m13desc":"Poulet mit Thai-Basilikum und Erbsen an grünem Kokosmilch-Curry (pikant)","m14title":"Massaman-Curry mit Poulet","m14desc":"Poulet mit Kartoffelstückchen und Erdnüssen an mildem «Massaman»-Kokos-Curry","m20title":"Massaman-Curry mit Rindfleisch","m20desc":"Rindfleisch mit Kartoffelstückchen und Erdnüssen an mildem «Massaman»-Kokos-Curry","m21title":"Penang-Curry mit Rindfleisch","m21desc":"Rindfleisch mit Kartoffelstückchen und Karotten an «Penang» Kokosmilch-Curry","m22title":"Fried Rice mit Rindfleisch","m22desc":"Gebratener Reiseintopf mit Rindfleisch, Gemüse und Ei","m23title":"Rindfleisch an Austernsauce","m23desc":"Rindfleisch mit frischem Broccoli und Pilzen an würziger Austernsauce","m24title":"Curry Fried Rice mit Rindfleisch","m24desc":"Gebratener Reiseintopf mit Rindfleisch, rotem Curry und viel frischem Gemüse","m30title":"Fried Noodles mit Gemüse","m30desc":"Gebratene Weizennudeln mit frischem Gemüse","m31title":"Süss-sauer mit Tofu","m31desc":"Tofu mit Ananas- und Gemüsestückchen an feinster süss-sauer Sauce","m32title":"Massaman-Curry mit Gemüse","m32desc":"Mit Kartoffelstückchen und Erdnüssen an mildem «Massaman»-Kokos-Curry und Gemüse","m33title":"Pad Thai mit Gemüse","m33desc":"Gebratene Reisnudeln mit Gemüse, Ei und Erdnüssen","m34title":"Gebratenes Thai-Gemüse mit Tofu","m34desc":"Tofu · Gemischt gebratenes Thai Gemüse mit Pilzen","b0p0":"Vorspeisen und Getränke","b0p1":"Frühlingsrollen mit Gemüse  7.00  ·  Gemüsestückchen  8.00\nFrittierte Hackfleischbällchen  9.00\nGebackene Pouletstückchen (BRA)  9.00\nGebackene Crevetten  11.50\nGurken-Tomatensalat oder gemischter Salat  9.00\nPouletspiessli mit Erdnusssauce (BRA)  12.50\nPlastikbesteck / Stäbli  1.00","b0p2":"Getränke je CHF 4.00","b0p3":"Cola, Cola Zero, Fanta, Sprite, Ice-Tea, Sinalco,\nValser, Rivella rot/blau, Schorle","b1p0":"Weitere Menüs je CHF 17.00","b1p1":"Frühlingsrollen-Menü","b1p2":"1 Portion Frühlingsrollen, 1 Gurken-Tomatensalat mit\nZwiebelringen oder gemischter Salat,\n1 Tafelgetränk nach Wahl","b1p3":"Pouletspiessli-Menü","b1p4":"4 Pouletspiessli (BRA) und 1 Portion Reis","b1p5":"Fleischdeklaration","b1p6":"Poulet: Schweiz/Brasilien · Ente: Polen\nFisch: Vietnam · Rind und Schwein: Schweiz","b2p0":"Bestellung und Abholung","b2p1":"031 382 59 59  ·  10.30 bis 13.00 Uhr","b2p2":"Mindestbestellung: Bern und nähere Umgebung 3 Menüs;\nAgglomeration 5 Menüs.","b2p3":"Take Away CHF 15.00","b2p4":"Abholung mittags von 10.30 bis 13.00 Uhr.\nSchwarztorstrasse 93, 3007 Bern","b2p5":"Ab 5 Menüs bitte gesammelt bezahlen.\nUnsere Kuriere führen höchstens CHF 200.00 mit.","b2p6":"info@thaifoodkurier.ch  ·  www.thaifoodkurier.ch"},"customRecipes":[{"id":"custom-mupn2thr-f4fdws","dish":"Rotes Kokosmilch-Curry","protein":"Poulet","description":"Mit zarten Bambussprossen an rotem Kokosmilch-Curry (leicht pikant)","sources":[]},{"id":"custom-mupnfayo-bqnb60","dish":"Curry Fried Rice mit gelbem Curry","protein":"Gemüse","description":"\"Curry Fried Rice\" gebratener Reiseintopf mit gelbem Curry (leicht pikant), Ananasstückchen und Cashew-Nüssen","sources":[]},{"id":"custom-mupp8pk2-977cev","dish":"Süss-sauer scharf","protein":"Crevetten","description":"Mit Tomaten, Baby-Corn und Zwiebeln an scharfer süss-sauer Sauce (sehr scharf)","sources":[]},{"id":"custom-muppn7q6-uawfhr","dish":"Fried Rice Kapao","protein":"Poulet","description":"Gebratener Reiseintopf grünen Bohnen und Thai-Basilikum (scharf)","sources":[]}],"editedRecipes":[{"id":"recipe-25","dish":"Grünes Kokosmilch-Curry","protein":"Poulet","description":"Mit Thai-Basilikum und Erbsen an grünem Kokosmilch-Curry (pikant)","sources":[]},{"id":"recipe-20","dish":"Curry Fried Rice mit rotem Curry","protein":"Gemüse","description":"Gebratener Reiseintopf mit rotem Curry (leicht pikant) und grünen Bohnen","sources":[]},{"id":"recipe-51","dish":"Gelbes Kokosmilch-Curry","protein":"Poulet","description":"Mit Karottenstückchen und Ananas an gelbem Kokosmilch-Curry (leicht pikant)","sources":[]},{"id":"recipe-12","dish":"Austernsauce","protein":"Rind","description":"Mit frischem Broccoli und Pilzen an würziger Austernsauce (mild)","sources":[]},{"id":"recipe-5","dish":"Knoblauch und weisser Pfeffer","protein":"Fisch","description":"Mit Knoblauch und weissem Pfeffer gebraten, rassig gewürzt","sources":[]},{"id":"recipe-7","dish":"Pad Thai","protein":"Poulet","description":"Gebratene Reisnudeln mit Ei, Sojasprossen und Erdnüssen","sources":[]},{"id":"recipe-8","dish":"Penang-Kokosmilch-Curry","protein":"Poulet","description":"Mit Kartoffelstückchen und Karotten an «Penang» Kokosmilch-Curry (pikant)","sources":[]},{"id":"recipe-26","dish":"Fried Noodles","protein":"Poulet","description":"Gebratene Weizennudeln mit frischem Gemüse (mild)","sources":[]},{"id":"recipe-55","dish":"Fried Rice","protein":"Poulet","description":"Gebratener Reiseintopf mit Gemüse und Ei (mild)","sources":[]},{"id":"recipe-13","dish":"Pad Ki Mao","protein":"Rind","description":"Gebratene Weizennudeln mit frischen Chilis und Gemüse","sources":[]},{"id":"recipe-39","dish":"Pad Krapao","protein":"Poulet","description":"Mit frischen Chilis grünen Bohnen und Thai-Basilikum gebraten (sehr scharf)","sources":[]}],"deletedRecipeIds":[],"end":"2026-10-16","artworkPositions":{"left":{"x":-339,"y":29},"right":{"x":332,"y":29},"year":{"x":246,"y":68}}};
  localStorage.setItem(key+'-backup',JSON.stringify({state,weekCycle}));
  persist();
@@ -1850,7 +1835,7 @@ prepareMonochromeHeads();
 </script><script id="recoverPlanFiveFromPdf20261018">
 (()=>{
  const key='menu-plan-five-pdf-2026-10-18-v1';
- if(localStorage.getItem(key))return;
+ if(loadedSavedMenu||localStorage.getItem(key))return;
  const recovered={"m00title": "Fried Rice mit Crevetten", "m00desc": "Gebratener Reiseintopf mit Crevetten, Gemüse und Ei", "m01title": "Grünes Curry mit Fischfilets", "m01desc": "Fischfilets mit Thai-Basilikum und Erbsen an grünem Kokosmilch-Curry (pikant)", "m02title": "Rotes Kokos-Curry mit Crevetten", "m02desc": "Crevetten mit zarten Bambussprossen an rotem Kokosmilch-Curry (leicht pikant)", "m03title": "Rotes Kokos-Curry mit Entenbrust", "m03desc": "Entenbrust mit zarten Bambussprossen an rotem Kokosmilch-Curry (leicht pikant)", "m04title": "Süss-sauer scharf mit Fischfilets", "m04desc": "Fischfilets mit Tomaten, Baby-Corn und Zwiebeln (sehr scharf)", "m10title": "Pad Krapao mit Poulet", "m10desc": "Poulet mit frischen Chilis und Thai-Basilikum gebraten (sehr scharf)", "m11title": "Massaman-Curry mit Poulet", "m11desc": "Poulet mit Kartoffelstückchen und Erdnüssen an mildem «Massaman»-Kokos-Curry", "m12title": "Nam Prik Pao mit Poulet", "m12desc": "Poulet mit frischen Chilis, Baby Corn und Cashew-Nüssen gebraten (sehr scharf)", "m13title": "Gelbes Curry mit Poulet", "m13desc": "Poulet mit Karottenstückchen und Ananas an gelbem Kokosmilch-Curry", "m14title": "Grünes Curry mit Poulet", "m14desc": "Poulet mit Thai-Basilikum und Erbsen an grünem Kokosmilch-Curry (pikant)", "m20title": "Massaman-Curry mit Rindfleisch", "m20desc": "Rindfleisch mit Kartoffelstückchen und Erdnüssen an mildem «Massaman»-Kokos-Curry", "m21title": "Rotes Kokos-Curry mit Rindfleisch", "m21desc": "Rindfleisch mit zarten Bambussprossen an rotem Kokosmilch-Curry (leicht pikant)", "m22title": "Penang-Curry mit Rindfleisch", "m22desc": "Rindfleisch mit Kartoffelstückchen und Karotten an «Penang» Kokosmilch-Curry", "m23title": "Pad Thai mit Rindfleisch", "m23desc": "Gebratene Reisnudeln mit Rindfleisch, Ei und Erdnüssen", "m24title": "Fried Noodles mit Rindfleisch", "m24desc": "Gebratene Weizennudeln mit Rindfleisch und frischem Gemüse", "m30title": "Grünes Curry mit Tofu", "m30desc": "Tofu mit Thai-Basilikum und Erbsen an grünem Kokosmilch-Curry (pikant)", "m31title": "Pad Thai mit Gemüse", "m31desc": "Gebratene Reisnudeln mit Gemüse, Ei und Erdnüssen", "m32title": "Curry Fried Rice gelb mit Gemüse", "m32desc": "Mit Ananasstückchen, Cashew-Nüssen und Gemüse (leicht pikant)", "m33title": "Süss-sauer mit Tofu", "m33desc": "Tofu mit Ananas- und Gemüsestückchen an feinster süss-sauer Sauce", "m34title": "Massaman-Curry mit Gemüse", "m34desc": "Mit Kartoffelstückchen und Erdnüssen an mildem «Massaman»-Kokos-Curry und Gemüse"};
  localStorage.setItem(key+'-backup',JSON.stringify({state,weekCycle}));
  persist();
@@ -1864,7 +1849,7 @@ prepareMonochromeHeads();
 </script><script id="recoverPlanOneFromPdf20261021">
 (()=>{
  const key='menu-plan-one-pdf-2026-10-21-v1';
- if(localStorage.getItem(key))return;
+ if(loadedSavedMenu||localStorage.getItem(key))return;
  const recovered={"m00title": "Fried Noodles mit Crevetten", "m00desc": "Gebratene Weizennudeln mit Crevetten und frischem Gemüse", "m01title": "Rotes Curry mit Fischfilets", "m01desc": "Fischfilets mit Thai-Auberginen und Bohnen an rotem Curry", "m02title": "Rotes Kokos-Curry mit Entenbrust", "m02desc": "Entenbrust mit zarten Bambussprossen und Ananas an rotem Kokosmilch-Curry (leicht pikant)", "m03title": "Grünes Curry mit Schweinefleisch", "m03desc": "Schweinefleisch mit Thai-Auberginen und Basilikum an grünem Kokos-Curry (pikant)", "m04title": "Knoblauch-Pfeffer mit Fischfilets", "m04desc": "Fischfilets mit Knoblauch und weissem Pfeffer gebraten, rassig gewürzt", "m10title": "Massaman-Curry mit Poulet", "m10desc": "Poulet mit Kartoffelstückchen und Erdnüssen an mildem «Massaman»-Kokos-Curry", "m11title": "Pad Thai mit Poulet", "m11desc": "Gebratene Reisnudeln mit Poulet, Ei und Erdnüssen", "m12title": "Penang-Curry mit Poulet", "m12desc": "Poulet mit Kartoffelstückchen und Karotten an «Penang» Kokosmilch-Curry", "m13title": "Süss-sauer mit Poulet", "m13desc": "Poulet mit Ananas- und Gemüsestückchen an feinster süss-sauer Sauce", "m14title": "Rotes Kokos-Curry mit Poulet", "m14desc": "Poulet mit zarten Bambussprossen an rotem Kokosmilch-Curry (leicht pikant)", "m20title": "Rotes Kokos-Curry mit Rindfleisch", "m20desc": "Rindfleisch mit zarten Bambussprossen an rotem Kokosmilch-Curry (leicht pikant)", "m21title": "Austernsauce mit Rindfleisch", "m21desc": "Rindfleisch mit frischem Broccoli und Pilzen an würziger Austernsauce", "m22title": "Pad Ki Mao mit Rindfleisch", "m22desc": "Gebratene Weizennudeln mit Rindfleisch, frischen Chilis und Gemüse", "m23title": "Pad Thai mit Rindfleisch", "m23desc": "Gebratene Reisnudeln mit Rindfleisch, Ei und Erdnüssen", "m24title": "Pad Kapao mit Rindfleisch", "m24desc": "Rindfleisch mit frischen Chilis und Thai-Basilikum gebraten (sehr scharf)", "m30title": "Süss-sauer mit Tofu", "m30desc": "Tofu mit Ananas- und Gemüsestückchen an feinster süss-sauer Sauce", "m31title": "Gelbes Curry mit Tofu", "m31desc": "Gelbes Kokosmilch-Curry mit Karottenstückchen und Tofu", "m32title": "Grünes Curry mit Tofu", "m32desc": "Tofuwürfelchen mit Thai-Basilikum an grünem Kokosmilch-Curry (pikant)", "m33title": "Massaman-Curry mit Gemüse", "m33desc": "Vegetarisches «Massaman» Kokosmilch-Curry mit Gemüse und Erdnüssen", "m34title": "Curry Fried Rice gelb mit Gemüse", "m34desc": "Gebratener Reis mit Ananas und Cashewnüssen (leicht pikant)"};
  localStorage.setItem(key+'-backup',JSON.stringify({state,weekCycle}));
  persist();
@@ -1878,7 +1863,7 @@ prepareMonochromeHeads();
 </script><script id="importPlansTwoFive20261021">
 (()=>{
  const key='menu-plans-two-five-jpg-2026-10-21-v1';
- if(localStorage.getItem(key))return;
+ if(loadedSavedMenu||localStorage.getItem(key))return;
  const plans={"2": {"m00title": "Gelbes Curry mit Crevetten", "m00desc": "Gebratene Crevetten mit Karottenstückchen an gelbem Kokosmilch-Curry", "m01title": "Süss-sauer scharf mit Fischfilets", "m01desc": "Fischfilets mit Zwiebeln und Tomaten an scharfer süss-sauer Sauce (sehr scharf)", "m02title": "Austernsauce mit Entenbrust", "m02desc": "Entenbrust an Austernsauce mit Broccoli und Pilzen gebraten", "m03title": "Grünes Curry mit Crevetten", "m03desc": "Gebratene Crevetten mit Thai-Basilikum und Erbsen an grünem Kokosmilch-Curry", "m04title": "Rotes Curry mit Fischfilets", "m04desc": "Fischfilets mit Thai-Auberginen und Bohnen an rotem Curry", "m10title": "Süss-sauer mit Poulet", "m10desc": "Poulet mit Ananas- und Gemüsestückchen an feinster süss-sauer Sauce", "m11title": "Grünes Curry mit Poulet", "m11desc": "Poulet mit Thai-Basilikum und Erbsen an grünem Kokosmilch-Curry (pikant)", "m12title": "Rotes Kokos-Curry mit Poulet", "m12desc": "Poulet mit zarten Bambussprossen an rotem Kokosmilch-Curry (leicht pikant)", "m13title": "Penang-Curry mit Poulet", "m13desc": "Poulet mit Kartoffelstückchen und Karotten an «Penang» Kokosmilch-Curry", "m14title": "Fried Noodles mit Poulet", "m14desc": "Gebratene Weizennudeln mit Poulet und frischem Gemüse", "m20title": "Grünes Curry mit Rindfleisch", "m20desc": "Rindfleisch mit Thai-Basilikum und Erbsen an grünem Kokosmilch-Curry (pikant)", "m21title": "Pad Thai mit Rindfleisch", "m21desc": "Gebratene Reisnudeln mit Rindfleisch, Ei und Erdnüssen", "m22title": "Massaman-Curry mit Rindfleisch", "m22desc": "Rindfleisch mit Kartoffelstückchen und Erdnüssen an «Massaman»-Kokosmilch-Curry (mild)", "m23title": "Pad Krapao mit Rindfleisch", "m23desc": "Rindfleisch mit frischen Chilis und Thai-Basilikum gebraten (sehr scharf)", "m24title": "Austernsauce mit Rindfleisch", "m24desc": "Rindfleisch mit frischem Broccoli und Pilzen an würziger Austernsauce", "m30title": "Fried Rice mit Gemüse", "m30desc": "Gebratener Reiseintopf mit viel frischem Gemüse und Ei", "m31title": "Massaman-Curry mit Gemüse", "m31desc": "Vegetarisches «Massaman» Kokosmilch-Curry mit Gemüse und Erdnüssen", "m32title": "Fried Noodles mit Gemüse", "m32desc": "Gebratene Weizennudeln mit viel frischem Gemüse", "m33title": "Pad Thai mit Gemüse", "m33desc": "Gebratene Reisnudeln mit Gemüse, Ei und Erdnüssen", "m34title": "Gelbes Curry mit Tofu", "m34desc": "Tofuwürfelchen an gelbem Kokosmilch-Curry mit Karotten- und Ananasstückchen"}, "5": {"m00title": "Grünes Curry mit Crevetten", "m00desc": "Crevetten mit Thai-Basilikum und Erbsen an grünem Kokosmilch-Curry", "m01title": "Knoblauch-Pfeffer mit Fischfilets", "m01desc": "Fischfilets mit Knoblauch und weissem Pfeffer gebraten, rassig gewürzt", "m02title": "Gelbes Curry mit Crevetten", "m02desc": "Crevetten mit Kartoffelstückchen und Ananas an gelbem Kokosmilch-Curry", "m03title": "Süss-sauer mit Schweinefleisch", "m03desc": "Schweinefleisch mit Gemüsestückchen an feinster süss-sauer Sauce", "m04title": "Süss-sauer scharf mit Fischfilet", "m04desc": "Fischfilet mit Zwiebeln und Tomaten an scharfer süss-sauer Sauce (sehr scharf)", "m10title": "Gelbes Curry mit Poulet", "m10desc": "Poulet mit Karottenstückchen und Ananas an gelbem Kokosmilch-Curry", "m11title": "Massaman-Curry mit Poulet", "m11desc": "Poulet an «Massaman» Kokosmilch-Curry mit Erdnüssen (mild)", "m12title": "Pad Kapao mit Poulet", "m12desc": "Poulet mit frischen Chili und Thai-Basilikum gebraten (sehr scharf)", "m13title": "Pad Thai mit Poulet", "m13desc": "Gebratene Reisnudeln mit Poulet, Ei und Erdnüssen", "m14title": "Fried Rice mit Poulet", "m14desc": "Gebratener Reiseintopf mit Poulet, Gemüse und Ei", "m20title": "Austernsauce mit Rindfleisch", "m20desc": "Rindfleisch mit frischem Broccoli und Pilzen gebraten an würziger Austernsauce", "m21title": "Rotes Kokos-Curry mit Rindfleisch", "m21desc": "Rindfleisch mit zarten Bambussprossen an rotem Kokosmilch-Curry (leicht pikant)", "m22title": "Fried Noodles mit Rindfleisch", "m22desc": "Gebratene Weizennudeln mit Rindfleisch und frischem Gemüse", "m23title": "Massaman-Curry mit Rindfleisch", "m23desc": "«Massaman» Kokosmilch-Curry mit Rindfleisch und Kartoffelstückchen (mild)", "m24title": "Penang-Curry mit Rindfleisch", "m24desc": "«Penang» Kokosmilch-Curry mit Rindfleisch und Karottenstückchen", "m30title": "Fried Noodles mit Gemüse", "m30desc": "Gebratene Weizennudeln mit viel frischem Gemüse", "m31title": "Pad Thai mit Gemüse", "m31desc": "Gebratene Reisnudeln mit Gemüse, Ei und Erdnüssen", "m32title": "Süss-sauer mit Tofu", "m32desc": "Tofuwürfelchen mit Gemüsestückchen an feinster süss-sauer Sauce", "m33title": "Grünes Curry mit Tofu", "m33desc": "Gebratene Tofuwürfelchen mit Thai-Basilikum an grünem Kokosmilch-Curry (pikant)", "m34title": "Thai-Gemüse mit Tofu", "m34desc": "Gemischt gebratenes Thai-Gemüse mit Tofuwürfelchen und Pilzen"}};
  localStorage.setItem(key+'-backup',JSON.stringify({state,weekCycle}));
  persist();
