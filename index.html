@@ -1311,7 +1311,7 @@ function fitMenuText(){
    cell.content.style.display='grid';cell.content.style.height='auto';
    cell.content.style.gridTemplateRows='auto auto';cell.content.style.rowGap='3px';
    cell.desc.style.alignSelf='start';cell.desc.style.textAlign='center';
-   const base=cell.dish.textContent.trim()?state.style.bodySize-1:18;
+   const base=cell.dish.textContent.trim()?state.style.bodySize-1:16;
    const fits=size=>{
      cell.desc.style.fontSize=size+'px';
      return cell.content.offsetHeight<=cell.height+.25&&cell.desc.scrollWidth<=cell.width+1;
