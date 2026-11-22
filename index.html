@@ -2397,28 +2397,12 @@ clone.style.transform='none';clone.style.margin='0';
   button.onclick=()=>selectWeekPlan(Number(button.dataset.weekPlan)-1);
  });
  save.onclick=async()=>{
-  save.disabled=true;
+  save.disabled=true;show('Farbige PDF wird erstellt …');
   try{
-   document.activeElement?.blur();normalizeMenuNotes();persist();
-   const filename='Wochenplan-'+state.start+'.json';
-   const contents=JSON.stringify(state,null,2);
-   if(typeof window.showSaveFilePicker==='function'){
-    const handle=await window.showSaveFilePicker({suggestedName:filename,types:[{description:'Bearbeitbarer Wochenplan',accept:{'application/json':['.json']}}]});
-    let writable;
-    try{
-     writable=await handle.createWritable();await writable.write(contents);await writable.close();
-    }catch(error){if(writable)try{await writable.abort()}catch{}throw error}
-    show('Wochenplan als Datei gespeichert.');
-   }else{
-    const blob=new Blob([contents],{type:'application/json'});
-    const url=URL.createObjectURL(blob),link=document.createElement('a');
-    link.href=url;link.download=filename;document.body.append(link);link.click();link.remove();
-    setTimeout(()=>URL.revokeObjectURL(url),60000);
-    show('Datei zum Speichern übergeben. Die Ordnerauswahl richtet sich nach den Download-Einstellungen deines Browsers.');
-   }
-  }catch(error){
-   show(error.name==='AbortError'?'Speichern abgebrochen.':'Wochenplan konnte nicht gespeichert werden. '+error.message);
-  }finally{save.disabled=false}
+   await document.getElementById('savePdf').onclick();
+   show('');
+  }catch(error){show('PDF konnte nicht erstellt werden. '+error.message)}
+  finally{save.disabled=false}
  };
  update.onclick=()=>{
   const index=weekCycle.selected;
