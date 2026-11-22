@@ -2242,9 +2242,9 @@ clone.style.transform='none';clone.style.margin='0';
  const panel=document.createElement('div');
  panel.className='day-notice-controls';
  const label=document.createElement('label');
- label.textContent='Text für den ganzen Wochentag';
+ label.textContent='Feiertag';
  const input=document.createElement('textarea');
- input.id='dayNotice';input.rows=3;
+ input.id='dayNotice';input.rows=1;
  input.placeholder='Zum Beispiel: Feiertag – mittags geschlossen';
  label.append(input);panel.append(label);
  const button=document.createElement('button');
@@ -2267,9 +2267,9 @@ clone.style.transform='none';clone.style.margin='0';
  };
 })();
 </script><style>
-.day-notice-controls{margin:12px 0;padding:12px 0;border-top:1px solid #514631}
+.day-notice-controls{margin:8px 0;padding:8px 0;border-top:1px solid #514631}
 .day-notice-controls label{display:block}
-.day-notice-controls textarea{box-sizing:border-box;width:100%;margin:6px 0 10px;padding:9px;background:#25252a;color:#fff;border:1px solid #666;border-radius:6px;font:inherit;resize:vertical}
+.day-notice-controls textarea{box-sizing:border-box;width:100%;margin:4px 0 6px;padding:6px 9px;background:#25252a;color:#fff;border:1px solid #666;border-radius:6px;font:inherit;resize:vertical}
 .day-notice-controls button{width:100%}
 @media print{.day-notice-controls{display:none!important}}
 </style>
