@@ -2277,3 +2277,168 @@ clone.style.transform='none';clone.style.margin='0';
 <style id="holidayTextGold20261122">#paper .dish:empty + .desc{color:#dfc487!important;-webkit-text-fill-color:#dfc487!important;font-weight:700;white-space:pre-wrap}</style>
 
 <style id="holidayVerticalCenter20261122">#paper .menu-frame:has(.dish:empty){justify-content:center!important}#paper .menu-content:has(>.dish:empty){display:flex!important;flex-direction:column;row-gap:0!important}#paper .dish:empty{display:none}#paper .dish:empty+.desc{transform:none!important}</style>
+
+<script id="protectedWeekPlans20261122">
+(()=>{
+ if(typeof weekCycle==='undefined')return;
+ const key='menu-studio-plan-library-v1';
+ const backupKey=key+'-vorher';
+ const validMenus=plan=>plan&&menuKeys.every(name=>typeof plan[name]==='string'&&plan[name].length<=10000);
+ const validState=plan=>{try{return validate(clone(plan))}catch{return null}};
+ function readLibrary(){
+  const raw=localStorage.getItem(key);
+  if(!raw)return null;
+  const value=JSON.parse(raw);
+  if(value.version!==1||!Array.isArray(value.templates)||value.templates.length!==5||!value.templates.every(validMenus)||!Array.isArray(value.weeks))throw Error('Die gespeicherten Wochenpläne konnten nicht gelesen werden.');
+  return value;
+ }
+ const baseline=[{"m00title": "Pad Thai mit Crevetten", "m00desc": "Gebratene Reisnudeln mit Ei, Sojasprossen und Erdnüssen", "m01title": "Rotes Curry mit Fischfilets", "m01desc": "Mit Thai-Auberginen und Bohnen an rotem Curry", "m02title": "Rotes Kokos-Curry mit Entenbrust", "m02desc": "Mit zarten Bambussprossen an rotem Kokosmilch-Curry (leicht pikant)", "m03title": "Grünes Curry mit Schweinefleisch", "m03desc": "Mit Thai-Basilikum und Erbsen an grünem Kokosmilch-Curry (pikant)", "m04title": "Knoblauch-Pfeffer mit Fischfilets", "m04desc": "Mit Knoblauch und weissem Pfeffer gebraten, rassig gewürzt", "m10title": "Massaman-Curry mit Poulet", "m10desc": "Mit Kartoffelstückchen und Erdnüssen an mildem «Massaman»-Kokos-Curry", "m11title": "Pad Thai mit Poulet", "m11desc": "Gebratene Reisnudeln mit Ei, Sojasprossen und Erdnüssen", "m12title": "Penang-Curry mit Poulet", "m12desc": "Mit Kartoffelstückchen und Karotten an «Penang» Kokosmilch-Curry", "m13title": "Süss-sauer mit Poulet", "m13desc": "Mit Ananas- und Gemüsestückchen an feinster süss-sauer Sauce", "m14title": "Rotes Kokos-Curry mit Poulet", "m14desc": "Mit zarten Bambussprossen an rotem Kokosmilch-Curry (leicht pikant)", "m20title": "Rotes Kokos-Curry mit Rindfleisch", "m20desc": "Mit zarten Bambussprossen an rotem Kokosmilch-Curry (leicht pikant)", "m21title": "Austernsauce mit Rindfleisch", "m21desc": "Mit frischem Broccoli und Pilzen an würziger Austernsauce", "m22title": "Pad Ki Mao mit Rindfleisch", "m22desc": "Gebratene Weizennudeln mit frischen Chilis und Gemüse", "m23title": "Pad Thai mit Rindfleisch", "m23desc": "Gebratene Reisnudeln mit Ei, Sojasprossen und Erdnüssen", "m24title": "Pad Kapao mit Rindfleisch", "m24desc": "Mit frischen Chilis und Thai-Basilikum gebraten (sehr scharf)", "m30title": "Süss-sauer mit Tofu", "m30desc": "Mit Ananas- und Gemüsestückchen an feinster süss-sauer Sauce", "m31title": "Gelbes Curry mit Tofu", "m31desc": "Mit Karottenstückchen und Ananas an gelbem Kokosmilch-Curry", "m32title": "Grünes Curry mit Tofu", "m32desc": "Mit Thai-Basilikum und Erbsen an grünem Kokosmilch-Curry (pikant)", "m33title": "Massaman-Curry mit Gemüse", "m33desc": "Mit Kartoffelstückchen und Erdnüssen an mildem «Massaman»-Kokos-Curry und Gemüse", "m34title": "Curry Fried Rice gelb mit Gemüse", "m34desc": "Gebratener Reis mit Ananas und Cashewnüssen (leicht pikant)"}, {"m00title": "Gelbes Curry mit Crevetten", "m00desc": "Mit Karottenstückchen und Ananas an gelbem Kokosmilch-Curry", "m01title": "Süss-sauer scharf mit Fischfilets", "m01desc": "Mit Ananas- und Gemüsestückchen an feinster süss-sauer Sauce", "m02title": "Austernsauce mit Entenbrust", "m02desc": "Mit frischem Broccoli und Pilzen an würziger Austernsauce", "m03title": "Grünes Curry mit Crevetten", "m03desc": "Mit Thai-Basilikum und Erbsen an grünem Kokosmilch-Curry (pikant)", "m04title": "Rotes Curry mit Fischfilets", "m04desc": "Mit Thai-Auberginen und Bohnen an rotem Curry", "m10title": "Süss-sauer mit Poulet", "m10desc": "Mit Ananas- und Gemüsestückchen an feinster süss-sauer Sauce", "m11title": "Grünes Curry mit Poulet", "m11desc": "Mit Thai-Basilikum und Erbsen an grünem Kokosmilch-Curry (pikant)", "m12title": "Rotes Kokos-Curry mit Poulet", "m12desc": "Mit zarten Bambussprossen an rotem Kokosmilch-Curry (leicht pikant)", "m13title": "Penang-Curry mit Poulet", "m13desc": "Mit Kartoffelstückchen und Karotten an «Penang» Kokosmilch-Curry", "m14title": "Fried Noodles mit Poulet", "m14desc": "Gebratene Weizennudeln mit frischem Gemüse", "m20title": "Grünes Curry mit Rindfleisch", "m20desc": "Mit Thai-Basilikum und Erbsen an grünem Kokosmilch-Curry (pikant)", "m21title": "Pad Thai mit Rindfleisch", "m21desc": "Gebratene Reisnudeln mit Ei, Sojasprossen und Erdnüssen", "m22title": "Massaman-Curry mit Rindfleisch", "m22desc": "Mit Kartoffelstückchen und Erdnüssen an mildem «Massaman»-Kokos-Curry", "m23title": "Pad Krapao mit Rindfleisch", "m23desc": "Mit frischen Chilis und Thai-Basilikum gebraten (sehr scharf)", "m24title": "Austernsauce mit Rindfleisch", "m24desc": "Mit frischem Broccoli und Pilzen an würziger Austernsauce", "m30title": "Fried Rice mit Gemüse", "m30desc": "Gebratener Reiseintopf mit Gemüse und Ei", "m31title": "Massaman-Curry mit Gemüse", "m31desc": "Mit Kartoffelstückchen und Erdnüssen an mildem «Massaman»-Kokos-Curry und Gemüse", "m32title": "Fried Noodles mit Gemüse", "m32desc": "Gebratene Weizennudeln mit frischem Gemüse", "m33title": "Pad Thai mit Gemüse", "m33desc": "Gebratene Reisnudeln mit Gemüse, Ei, Sojasprossen und Erdnüssen", "m34title": "Gelbes Curry mit Tofu", "m34desc": "Mit Karottenstückchen und Ananas an gelbem Kokosmilch-Curry"}, {"m00title": "Fried Rice mit Crevetten", "m00desc": "Gebratener Reiseintopf mit Gemüse und Ei", "m01title": "Grünes Curry mit Fischfilets", "m01desc": "Mit Thai-Basilikum und Erbsen an grünem Kokosmilch-Curry (pikant)", "m02title": "Rotes Kokos-Curry mit Crevetten", "m02desc": "Mit zarten Bambussprossen an rotem Kokosmilch-Curry (leicht pikant)", "m03title": "Rotes Kokos-Curry mit Entenbrust", "m03desc": "Mit zarten Bambussprossen an rotem Kokosmilch-Curry (leicht pikant)", "m04title": "Süss-sauer scharf mit Fischfilets", "m04desc": "Mit Ananas- und Gemüsestückchen an feinster süss-sauer Sauce", "m10title": "Pad Krapao mit Poulet", "m10desc": "Mit frischen Chilis und Thai-Basilikum gebraten (sehr scharf)", "m11title": "Massaman-Curry mit Poulet", "m11desc": "Mit Kartoffelstückchen und Erdnüssen an mildem «Massaman»-Kokos-Curry", "m12title": "Nam Prik Pao mit Poulet", "m12desc": "Mit frischen Chilis, Baby Corn und Cashew-Nüssen gebraten (sehr scharf)", "m13title": "Gelbes Curry mit Poulet", "m13desc": "Mit Karottenstückchen und Ananas an gelbem Kokosmilch-Curry", "m14title": "Grünes Curry mit Poulet", "m14desc": "Mit Thai-Basilikum und Erbsen an grünem Kokosmilch-Curry (pikant)", "m20title": "Massaman-Curry mit Rindfleisch", "m20desc": "Mit Kartoffelstückchen und Erdnüssen an mildem «Massaman»-Kokos-Curry", "m21title": "Rotes Kokos-Curry mit Rindfleisch", "m21desc": "Mit zarten Bambussprossen an rotem Kokosmilch-Curry (leicht pikant)", "m22title": "Penang-Curry mit Rindfleisch", "m22desc": "Mit Kartoffelstückchen und Karotten an «Penang» Kokosmilch-Curry", "m23title": "Pad Thai mit Rindfleisch", "m23desc": "Gebratene Reisnudeln mit Ei, Sojasprossen und Erdnüssen", "m24title": "Fried Noodles mit Rindfleisch", "m24desc": "Gebratene Weizennudeln mit frischem Gemüse", "m30title": "Grünes Curry mit Tofu", "m30desc": "Mit Thai-Basilikum und Erbsen an grünem Kokosmilch-Curry (pikant)", "m31title": "Pad Thai mit Gemüse", "m31desc": "Gebratene Reisnudeln mit Gemüse, Ei, Sojasprossen und Erdnüssen", "m32title": "Curry Fried Rice gelb mit Gemüse", "m32desc": "Gebratener Reiseintopf mit rotem Curry und viel frischem Gemüse", "m33title": "Süss-sauer mit Tofu", "m33desc": "Mit Ananas- und Gemüsestückchen an feinster süss-sauer Sauce", "m34title": "Massaman-Curry mit Gemüse", "m34desc": "Mit Kartoffelstückchen und Erdnüssen an mildem «Massaman»-Kokos-Curry und Gemüse"}, {"m00title": "Rotes Kokos-Curry mit Entenbrust", "m00desc": "Mit zarten Bambussprossen an rotem Kokosmilch-Curry (leicht pikant)", "m01title": "Rotes Curry mit Fischfilets", "m01desc": "Mit Thai-Auberginen und Bohnen an rotem Curry", "m02title": "Grünes Curry mit Schweinefleisch", "m02desc": "Mit Thai-Basilikum und Erbsen an grünem Kokosmilch-Curry (pikant)", "m03title": "Gelbes Curry mit Crevetten", "m03desc": "Mit Karottenstückchen und Ananas an gelbem Kokosmilch-Curry", "m04title": "Süss-sauer scharf mit Fischfilets", "m04desc": "Mit Ananas- und Gemüsestückchen an feinster süss-sauer Sauce", "m10title": "Süss-sauer mit Poulet", "m10desc": "Mit Ananas- und Gemüsestückchen an feinster süss-sauer Sauce", "m11title": "Pad Thai mit Poulet", "m11desc": "Gebratene Reisnudeln mit Ei, Sojasprossen und Erdnüssen", "m12title": "Nam Prik Pao mit Poulet", "m12desc": "Mit frischen Chilis, Baby Corn und Cashew-Nüssen gebraten (sehr scharf)", "m13title": "Grünes Curry mit Poulet", "m13desc": "Mit Thai-Basilikum und Erbsen an grünem Kokosmilch-Curry (pikant)", "m14title": "Massaman-Curry mit Poulet", "m14desc": "Mit Kartoffelstückchen und Erdnüssen an mildem «Massaman»-Kokos-Curry", "m20title": "Massaman-Curry mit Rindfleisch", "m20desc": "Mit Kartoffelstückchen und Erdnüssen an mildem «Massaman»-Kokos-Curry", "m21title": "Penang-Curry mit Rindfleisch", "m21desc": "Mit Kartoffelstückchen und Karotten an «Penang» Kokosmilch-Curry", "m22title": "Fried Rice mit Rindfleisch", "m22desc": "Gebratener Reiseintopf mit Gemüse und Ei", "m23title": "Rindfleisch an Austernsauce", "m23desc": "Mit frischem Broccoli und Pilzen an würziger Austernsauce", "m24title": "Curry Fried Rice mit Rindfleisch", "m24desc": "Gebratener Reiseintopf mit rotem Curry und viel frischem Gemüse", "m30title": "Fried Noodles mit Gemüse", "m30desc": "Gebratene Weizennudeln mit frischem Gemüse", "m31title": "Süss-sauer mit Tofu", "m31desc": "Mit Ananas- und Gemüsestückchen an feinster süss-sauer Sauce", "m32title": "Massaman-Curry mit Gemüse", "m32desc": "Mit Kartoffelstückchen und Erdnüssen an mildem «Massaman»-Kokos-Curry und Gemüse", "m33title": "Pad Thai mit Gemüse", "m33desc": "Gebratene Reisnudeln mit Gemüse, Ei, Sojasprossen und Erdnüssen", "m34title": "Gebratenes Thai-Gemüse mit Tofu", "m34desc": "Gemischt gebratenes Thai-Gemüse mit Pilzen"}, {"m00title": "Grünes Curry mit Crevetten", "m00desc": "Mit Thai-Basilikum und Erbsen an grünem Kokosmilch-Curry (pikant)", "m01title": "Knoblauch-Pfeffer mit Fischfilets", "m01desc": "Mit Knoblauch und weissem Pfeffer gebraten, rassig gewürzt", "m02title": "Gelbes Curry mit Crevetten", "m02desc": "Mit Karottenstückchen und Ananas an gelbem Kokosmilch-Curry", "m03title": "Süss-sauer mit Schweinefleisch", "m03desc": "Mit Ananas- und Gemüsestückchen an feinster süss-sauer Sauce", "m04title": "Süss-sauer scharf mit Fischfilet", "m04desc": "Mit Ananas- und Gemüsestückchen an feinster süss-sauer Sauce", "m10title": "Gelbes Curry mit Poulet", "m10desc": "Mit Karottenstückchen und Ananas an gelbem Kokosmilch-Curry", "m11title": "Massaman-Curry mit Poulet", "m11desc": "Mit Kartoffelstückchen und Erdnüssen an mildem «Massaman»-Kokos-Curry", "m12title": "Pad Kapao mit Poulet", "m12desc": "Mit frischen Chilis und Thai-Basilikum gebraten (sehr scharf)", "m13title": "Pad Thai mit Poulet", "m13desc": "Gebratene Reisnudeln mit Ei, Sojasprossen und Erdnüssen", "m14title": "Fried Rice mit Poulet", "m14desc": "Gebratener Reiseintopf mit Gemüse und Ei", "m20title": "Austernsauce mit Rindfleisch", "m20desc": "Mit frischem Broccoli und Pilzen an würziger Austernsauce", "m21title": "Rotes Kokos-Curry mit Rindfleisch", "m21desc": "Mit zarten Bambussprossen an rotem Kokosmilch-Curry (leicht pikant)", "m22title": "Fried Noodles mit Rindfleisch", "m22desc": "Gebratene Weizennudeln mit frischem Gemüse", "m23title": "Massaman-Curry mit Rindfleisch", "m23desc": "Mit Kartoffelstückchen und Erdnüssen an mildem «Massaman»-Kokos-Curry", "m24title": "Penang-Curry mit Rindfleisch", "m24desc": "Mit Kartoffelstückchen und Karotten an «Penang» Kokosmilch-Curry", "m30title": "Fried Noodles mit Gemüse", "m30desc": "Gebratene Weizennudeln mit frischem Gemüse", "m31title": "Pad Thai mit Gemüse", "m31desc": "Gebratene Reisnudeln mit Gemüse, Ei, Sojasprossen und Erdnüssen", "m32title": "Süss-sauer mit Tofu", "m32desc": "Mit Ananas- und Gemüsestückchen an feinster süss-sauer Sauce", "m33title": "Grünes Curry mit Tofu", "m33desc": "Mit Thai-Basilikum und Erbsen an grünem Kokosmilch-Curry (pikant)", "m34title": "Thai-Gemüse mit Tofu", "m34desc": "Gemischt gebratenes Thai-Gemüse mit Pilzen"}];
+ const panel=document.createElement('section');panel.className='week-library';
+ const heading=document.createElement('h3');heading.textContent='Arbeitskopie';panel.append(heading);
+ const status=document.createElement('p');status.className='hint';status.setAttribute('role','status');panel.append(status);
+ const save=document.createElement('button');save.type='button';save.className='primary';save.textContent='Wochenplan speichern';panel.append(save);
+ const label=document.createElement('label');label.textContent='Gespeicherte Wochenpläne';
+ const select=document.createElement('select');select.id='savedWeekPlans';label.append(select);panel.append(label);
+ const open=document.createElement('button');open.type='button';open.textContent='Wochenplan öffnen';panel.append(open);
+ const update=document.createElement('button');update.type='button';update.textContent='Vorlage aktualisieren';panel.append(update);
+ const cycle=document.querySelector('.plan-cycle');
+ const caption=document.createElement('h3');caption.className='template-caption';caption.textContent='Vorlagen';cycle.before(caption);cycle.after(panel);
+ let activeWeekId=null,library,storageError=false;
+ const stamp=()=>new Date().toISOString();
+ const formatDate=value=>new Date(value+'T12:00:00').toLocaleDateString('de-CH',{day:'2-digit',month:'2-digit',year:'numeric'});
+ const weekName=plan=>'Wochenplan '+formatDate(plan.start)+' – '+formatDate(shiftedDate(plan.start,4));
+ const menuCopy=plan=>Object.fromEntries(menuKeys.map(name=>[name,plan[name]]));
+ function show(message){status.textContent=message}
+ function refresh(){
+  heading.textContent='Arbeitskopie · Vorlage '+(weekCycle.selected+1);
+  update.textContent='Vorlage '+(weekCycle.selected+1)+' aktualisieren';
+  const previous=select.value||activeWeekId||'';select.replaceChildren();
+  const placeholder=new Option(library.weeks.length?'Wochenplan auswählen':'Noch keine Wochenpläne gespeichert','');select.add(placeholder);
+  [...library.weeks].sort((a,b)=>(b.updated||'').localeCompare(a.updated||'')).forEach(item=>select.add(new Option(item.name,item.id)));
+  Object.entries(library.workingCopies||{}).forEach(([id,item])=>select.add(new Option('Entwurf · '+weekName(item.state)+' · Vorlage '+(item.sourceTemplate+1),'draft:'+id)));
+  if([...select.options].some(option=>option.value===previous))select.value=previous;
+  open.disabled=!select.value;
+ }
+ function commit(value){localStorage.setItem(key,JSON.stringify(value));library=value;weekCycle.plans=clone(value.templates)}
+ function fail(error){storageError=true;show('Speichern fehlgeschlagen. '+(error?.message||'Bitte genügend freien Speicher prüfen.'));throw error}
+ function preserveWorkingCopy(latest){
+  const saved=activeWeekId&&latest.weeks.find(item=>item.id===activeWeekId);
+  const reference=saved?saved.state.texts:latest.templates[weekCycle.selected];
+  if(JSON.stringify(menuCopy(state.texts))===JSON.stringify(menuCopy(reference))&&(!saved||state.start===saved.state.start))return;
+  latest.workingCopies=latest.workingCopies||{};
+  const id='draft-'+weekCycle.selected+'-'+state.start;
+  latest.workingCopies[id]={state:clone(state),sourceTemplate:weekCycle.selected,activeWeekId,updated:stamp()};
+ }
+ try{
+  library=readLibrary();
+  if(!library){
+   // Keep the old draft and all five old slots before separating templates.
+   localStorage.setItem(backupKey,JSON.stringify({savedAt:stamp(),state:clone(state),weekCycle:clone(weekCycle),rawDraft:localStorage.getItem(USER_DRAFT_KEY),rawCycle:localStorage.getItem(CYCLE_KEY)}));
+   library={version:1,templates:clone(weekCycle.plans),weeks:[],draft:{state:clone(state),sourceTemplate:weekCycle.selected,activeWeekId:null},recovery:[]};
+   const normalized=value=>value.toLowerCase().replace(/rindfleisch/g,'rind').replace(/schweinefleisch/g,'schwein').replace(/fischfilets?/g,'fisch').replace(/\s+/g,' ').trim();
+   library.templates.forEach((plan,index)=>{
+    const closed=[];
+    for(let day=0;day<5;day++){
+     const values=Array.from({length:4},(_,row)=>plan[`m${row}${day}desc`]);
+     if(Array.from({length:4},(_,row)=>!plan[`m${row}${day}title`].trim()).every(Boolean)&&values.every(value=>value===values[0])&&/geschlossen|feiertag|zibele/i.test(values[0]))closed.push(day);
+    }
+    if(!closed.length)return;
+    // Recover only a matching saved menu, preserving all other edited columns.
+    const titleKeys=menuKeys.filter(name=>name.endsWith('title')&&!closed.includes(Number(name[2]))&&plan[name].trim());
+    const candidates=baseline.map(source=>({source,score:titleKeys.filter(name=>normalized(source[name])===normalized(plan[name])).length})).sort((a,b)=>b.score-a.score);
+    const savedState=clone(state);Object.assign(savedState.texts,plan);
+    library.weeks.push({id:'legacy-'+index,name:'Bisheriger Arbeitsstand · Vorlage '+(index+1),state:savedState,sourceTemplate:index,updated:stamp()});
+    if(titleKeys.length>=4&&candidates[0].score/titleKeys.length>=.7&&candidates[0].score>(candidates[1]?.score||0)){
+     closed.forEach(day=>{for(let row=0;row<4;row++)for(const part of ['title','desc'])plan[`m${row}${day}${part}`]=candidates[0].source[`m${row}${day}${part}`]});
+     library.recovery.push('Vorlage '+(index+1)+': ursprüngliche Menüs für '+closed.map(day=>DAYS[day]).join(', ')+' wiederhergestellt.');
+    }else library.recovery.push('Vorlage '+(index+1)+': vorherigen Feiertagsstand separat gesichert. Die ursprünglichen Menüs bitte prüfen.');
+   });
+   commit(library);
+  }else weekCycle.plans=clone(library.templates);
+  const draft=library.draft;
+  if(draft&&validState(draft.state)&&Number.isInteger(draft.sourceTemplate)&&draft.sourceTemplate>=0&&draft.sourceTemplate<5){
+   state=validState(draft.state);weekCycle.selected=draft.sourceTemplate;activeWeekId=draft.activeWeekId||null;
+  }
+  sync();updateWeekButtons();refresh();
+  show(library.recovery?.length?library.recovery.join(' ')+' Der bisherige Arbeitsstand ist separat gespeichert.':'Änderungen gelten für die Arbeitskopie. Die Vorlagen bleiben geschützt.');
+ }catch(error){
+  save.disabled=true;open.disabled=true;update.disabled=true;
+  cycle.querySelectorAll('button').forEach(button=>button.disabled=true);
+  show('Vorlagenschutz konnte nicht gestartet werden. '+error.message);return;
+ }
+ persistCycle=function(){
+  try{
+   const latest=readLibrary();
+   latest.draft={state:clone(state),sourceTemplate:weekCycle.selected,activeWeekId};
+   commit(latest);
+   localStorage.setItem(CYCLE_KEY,JSON.stringify(weekCycle));
+   if(storageError){storageError=false;show('Arbeitskopie wieder automatisch gesichert.')}
+  }catch(error){fail(error)}
+ };
+ selectWeekPlan=function(index){
+  if(!Number.isInteger(index)||index<0||index>4)return;
+  try{
+   // Preserve an unsaved draft in recovery history before loading a template.
+   const latest=readLibrary();
+   preserveWorkingCopy(latest);
+   localStorage.setItem(key,JSON.stringify(latest));
+   weekCycle.selected=index;Object.assign(state.texts,clone(latest.templates[index]));activeWeekId=null;history.length=0;lastEdit=null;
+   sync();persist();updateWeekButtons();refresh();show('Vorlage '+(index+1)+' als Arbeitskopie geladen.');
+  }catch(error){show('Vorlage konnte nicht geladen werden. '+error.message)}
+ };
+ changeWeekDate=function(field,value){
+  const dateStatus=document.getElementById('weekDateStatus');
+  if(!dateValue(value)){dateStatus.textContent='Bitte ein gültiges Datum wählen.';return}
+  remember('week-dates');state.start=value;state.end=shiftedDate(value,4);lastEdit=null;
+  sync();persist();refresh();show('Datum der Arbeitskopie geändert.');
+ };
+ cycle.querySelectorAll('button').forEach(button=>{
+  button.setAttribute('aria-label','Vorlage '+button.dataset.weekPlan);
+  button.title='Geschützte Vorlage '+button.dataset.weekPlan+' laden';
+  button.onclick=()=>selectWeekPlan(Number(button.dataset.weekPlan)-1);
+ });
+ save.onclick=()=>{
+  try{
+   document.activeElement?.blur();normalizeMenuNotes();
+   const latest=readLibrary();
+   const current=activeWeekId&&latest.weeks.find(item=>item.id===activeWeekId);
+   const id=current&&activeWeekId.startsWith('week-')&&current.state.start===state.start?activeWeekId:'week-'+state.start;
+   const item={id,name:weekName(state),state:clone(state),sourceTemplate:weekCycle.selected,updated:stamp()};
+   const index=latest.weeks.findIndex(entry=>entry.id===id);
+   if(index<0)latest.weeks.push(item);else latest.weeks[index]=item;
+   latest.draft={state:clone(state),sourceTemplate:weekCycle.selected,activeWeekId:id};
+   commit(latest);activeWeekId=id;refresh();select.value=id;open.disabled=false;show(item.name+' gespeichert.');
+  }catch(error){show('Wochenplan konnte nicht gespeichert werden. '+error.message)}
+ };
+ select.onchange=()=>{open.disabled=!select.value};
+ open.onclick=()=>{
+  try{
+   const latest=readLibrary(),draftId=select.value.startsWith('draft:')?select.value.slice(6):null;
+   const item=draftId?latest.workingCopies?.[draftId]:latest.weeks.find(entry=>entry.id===select.value);
+   const restored=item&&validState(item.state);if(!restored||!Number.isInteger(item.sourceTemplate)||item.sourceTemplate<0||item.sourceTemplate>4)throw Error('Der Wochenplan ist ungültig.');
+   preserveWorkingCopy(latest);commit(latest);
+   persist();state=restored;weekCycle.selected=item.sourceTemplate;activeWeekId=draftId?null:item.id;history.length=0;lastEdit=null;
+   sync();persist();updateWeekButtons();refresh();select.value=draftId?'draft:'+draftId:item.id;show((item.name||'Arbeitskopie')+' geöffnet.');
+  }catch(error){show('Wochenplan konnte nicht geöffnet werden. '+error.message)}
+ };
+ update.onclick=()=>{
+  const index=weekCycle.selected;
+  if(!window.confirm('Vorlage '+(index+1)+' mit den Menüs dieser Arbeitskopie ersetzen? Diese Änderung gilt künftig für diese Vorlage.'))return;
+  try{
+   document.activeElement?.blur();normalizeMenuNotes();
+   const latest=readLibrary();latest.templateHistory=latest.templateHistory||[];
+   latest.templateHistory.push({index,texts:clone(latest.templates[index]),savedAt:stamp()});
+   latest.templates[index]=captureWeekPlan();commit(latest);persist();refresh();show('Vorlage '+(index+1)+' ausdrücklich aktualisiert.');
+  }catch(error){show('Vorlage konnte nicht aktualisiert werden. '+error.message)}
+ };
+ const exportButton=document.getElementById('exportMenuState');
+ if(exportButton)exportButton.textContent='Arbeitskopie als Datei sichern';
+ if(document.modelContext?.registerTool)try{Promise.resolve(document.modelContext.registerTool({name:'read_plan_library',description:'Read protected templates, saved weeks and the working copy for backup and verification.',inputSchema:{type:'object',properties:{},additionalProperties:false},annotations:{readOnlyHint:true},execute:()=>({library:readLibrary(),workingCopy:clone(state),selectedTemplate:weekCycle.selected,legacyBackup:JSON.parse(localStorage.getItem(backupKey)||'null')})})).catch(()=>{})}catch{}
+})();
+</script><style>
+.week-library{margin:12px 0;border-top:1px solid #514631;padding-top:10px}
+.week-library h3,.template-caption{font-size:14px;margin:8px 0}
+.week-library label{display:block;margin-top:12px}
+.week-library select,.week-library button{box-sizing:border-box;width:100%;margin:5px 0}
+@media print{.week-library,.template-caption{display:none!important}}
+</style>
