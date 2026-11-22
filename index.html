@@ -1145,6 +1145,7 @@ function normalizeStoredMenu(texts){
  for(let r=0;r<4;r++)for(let c=0;c<5;c++){
   const tk=`m${r}${c}title`,dk=`m${r}${c}desc`;
   if(typeof texts[tk]!=='string'||typeof texts[dk]!=='string')continue;
+  if(!texts[tk].trim())continue;
   texts[dk]=cleanMenuDescription(texts[dk],texts[tk]);
   if(/^Süss-sauer scharf mit /i.test(texts[tk])&&/^Mit Ananas- und Gemüsestückchen an feinster süss-sauer Sauce(?: \(.*?\))?$/i.test(texts[dk])){
    const recipes=[...(state.editedRecipes||[]),...(state.customRecipes||[]),...MENU_CATALOG];
@@ -1287,7 +1288,7 @@ function fitMenuText(){
      dish.style.letterSpacing='-0.3px';
      dish.style.marginBottom='0';
      // Avoid repeating the protein already named in the heading.
-     if(desc){
+     if(desc&&dish.textContent.trim()){
        desc.style.transform='none';
        let value=desc.textContent;
        if(/pad thai/i.test(dish.textContent))value=value.replace(/\bEi(?:\s+und|\s*,)\s*Erdnüssen/gi,'Ei, Sojasprossen und Erdnüssen');
@@ -2232,4 +2233,43 @@ clone.style.transform='none';clone.style.margin='0';
  #paper#paper .doc-title::after{content:attr(data-gold-title);transform:translate(-50%,calc(-50% + 8px));font:700 38.3328px/1.2 Arial,sans-serif;color:#ddbb65!important;-webkit-text-fill-color:#ddbb65!important;-webkit-text-stroke:2px #000;paint-order:stroke fill;text-shadow:0 2px 3px #160000}
  #paper#paper [data-artwork="year"]{color:#c99b73!important;-webkit-text-fill-color:#c99b73!important;-webkit-text-stroke:0!important;text-shadow:none!important;opacity:1!important;filter:none!important}
 }
+</style>
+
+<script id="dayNoticeFeature20261122">
+(()=>{
+ const controls=document.querySelector('.target-controls');
+ if(!controls)return;
+ const panel=document.createElement('div');
+ panel.className='day-notice-controls';
+ const label=document.createElement('label');
+ label.textContent='Text für den ganzen Wochentag';
+ const input=document.createElement('textarea');
+ input.id='dayNotice';input.rows=3;
+ input.placeholder='Zum Beispiel: Feiertag – mittags geschlossen';
+ label.append(input);panel.append(label);
+ const button=document.createElement('button');
+ button.type='button';button.className='primary';
+ button.textContent='In den Wochentag einsetzen';panel.append(button);
+ const status=document.createElement('p');status.className='hint';
+ status.setAttribute('role','status');panel.append(status);
+ controls.after(panel);
+ button.onclick=()=>{
+  const value=input.value.trim();
+  if(!value){status.textContent='Bitte zuerst einen Text eingeben.';input.focus();return}
+  const day=document.querySelector('#targetDay').value;
+  lastEdit=null;remember('day-notice');
+  for(let row=0;row<4;row++){
+   state.texts[`m${row}${day}title`]='';
+   state.texts[`m${row}${day}desc`]=value;
+  }
+  lastEdit=null;sync();persist();
+  status.textContent='Eingesetzt für '+DAYS[Number(day)]+' in allen vier Menüzeilen.';
+ };
+})();
+</script><style>
+.day-notice-controls{margin:12px 0;padding:12px 0;border-top:1px solid #514631}
+.day-notice-controls label{display:block}
+.day-notice-controls textarea{box-sizing:border-box;width:100%;margin:6px 0 10px;padding:9px;background:#25252a;color:#fff;border:1px solid #666;border-radius:6px;font:inherit;resize:vertical}
+.day-notice-controls button{width:100%}
+@media print{.day-notice-controls{display:none!important}}
 </style>
