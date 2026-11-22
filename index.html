@@ -2253,9 +2253,14 @@ clone.style.transform='none';clone.style.margin='0';
  const status=document.createElement('p');status.className='hint';
  status.setAttribute('role','status');panel.append(status);
  controls.after(panel);
+ document.getElementById('applyRecipe').style.setProperty('display','none','important');
  button.onclick=()=>{
   const value=input.value.trim();
-  if(!value){status.textContent='Bitte zuerst einen Text eingeben.';input.focus();return}
+  if(!value){
+   document.getElementById('applyRecipe').click();
+   status.textContent=document.getElementById('pickerStatus').textContent;
+   return;
+  }
   const day=document.querySelector('#targetDay').value;
   lastEdit=null;remember('day-notice');
   for(let row=0;row<4;row++){
@@ -2263,6 +2268,7 @@ clone.style.transform='none';clone.style.margin='0';
    state.texts[`m${row}${day}desc`]=value;
   }
   lastEdit=null;sync();persist();
+  input.value='';
   status.textContent='Eingesetzt für '+DAYS[Number(day)]+' in allen vier Menüzeilen.';
  };
 })();
@@ -2297,12 +2303,10 @@ clone.style.transform='none';clone.style.margin='0';
  const heading=document.createElement('h3');heading.textContent='Arbeitskopie';panel.append(heading);
  const status=document.createElement('p');status.className='hint';status.setAttribute('role','status');panel.append(status);
  const save=document.createElement('button');save.type='button';save.className='primary';save.textContent='Wochenplan speichern';panel.append(save);
- const label=document.createElement('label');label.textContent='Gespeicherte Wochenpläne';
- const select=document.createElement('select');select.id='savedWeekPlans';label.append(select);panel.append(label);
- const open=document.createElement('button');open.type='button';open.textContent='Wochenplan öffnen';panel.append(open);
- const update=document.createElement('button');update.type='button';update.textContent='Vorlage aktualisieren';panel.append(update);
+ const update=document.createElement('button');update.type='button';update.textContent='Vorlage aktualisieren';
+ const templateActions=document.createElement('div');templateActions.className='template-actions';templateActions.append(update);
  const cycle=document.querySelector('.plan-cycle');
- const caption=document.createElement('h3');caption.className='template-caption';caption.textContent='Vorlagen';cycle.before(caption);cycle.after(panel);
+ const caption=document.createElement('h3');caption.className='template-caption';caption.textContent='Vorlagen';cycle.before(caption);cycle.after(templateActions);templateActions.after(panel);
  let activeWeekId=null,library,storageError=false;
  const stamp=()=>new Date().toISOString();
  const formatDate=value=>new Date(value+'T12:00:00').toLocaleDateString('de-CH',{day:'2-digit',month:'2-digit',year:'numeric'});
@@ -2312,12 +2316,7 @@ clone.style.transform='none';clone.style.margin='0';
  function refresh(){
   heading.textContent='Arbeitskopie · Vorlage '+(weekCycle.selected+1);
   update.textContent='Vorlage '+(weekCycle.selected+1)+' aktualisieren';
-  const previous=select.value||activeWeekId||'';select.replaceChildren();
-  const placeholder=new Option(library.weeks.length?'Wochenplan auswählen':'Noch keine Wochenpläne gespeichert','');select.add(placeholder);
-  [...library.weeks].sort((a,b)=>(b.updated||'').localeCompare(a.updated||'')).forEach(item=>select.add(new Option(item.name,item.id)));
-  Object.entries(library.workingCopies||{}).forEach(([id,item])=>select.add(new Option('Entwurf · '+weekName(item.state)+' · Vorlage '+(item.sourceTemplate+1),'draft:'+id)));
-  if([...select.options].some(option=>option.value===previous))select.value=previous;
-  open.disabled=!select.value;
+
  }
  function commit(value){localStorage.setItem(key,JSON.stringify(value));library=value;weekCycle.plans=clone(value.templates)}
  function fail(error){storageError=true;show('Speichern fehlgeschlagen. '+(error?.message||'Bitte genügend freien Speicher prüfen.'));throw error}
@@ -2362,7 +2361,7 @@ clone.style.transform='none';clone.style.margin='0';
   sync();updateWeekButtons();refresh();
   show(library.recovery?.length?library.recovery.join(' ')+' Der bisherige Arbeitsstand ist separat gespeichert.':'Änderungen gelten für die Arbeitskopie. Die Vorlagen bleiben geschützt.');
  }catch(error){
-  save.disabled=true;open.disabled=true;update.disabled=true;
+  save.disabled=true;update.disabled=true;
   cycle.querySelectorAll('button').forEach(button=>button.disabled=true);
   show('Vorlagenschutz konnte nicht gestartet werden. '+error.message);return;
  }
@@ -2397,29 +2396,29 @@ clone.style.transform='none';clone.style.margin='0';
   button.title='Geschützte Vorlage '+button.dataset.weekPlan+' laden';
   button.onclick=()=>selectWeekPlan(Number(button.dataset.weekPlan)-1);
  });
- save.onclick=()=>{
+ save.onclick=async()=>{
+  save.disabled=true;
   try{
-   document.activeElement?.blur();normalizeMenuNotes();
-   const latest=readLibrary();
-   const current=activeWeekId&&latest.weeks.find(item=>item.id===activeWeekId);
-   const id=current&&activeWeekId.startsWith('week-')&&current.state.start===state.start?activeWeekId:'week-'+state.start;
-   const item={id,name:weekName(state),state:clone(state),sourceTemplate:weekCycle.selected,updated:stamp()};
-   const index=latest.weeks.findIndex(entry=>entry.id===id);
-   if(index<0)latest.weeks.push(item);else latest.weeks[index]=item;
-   latest.draft={state:clone(state),sourceTemplate:weekCycle.selected,activeWeekId:id};
-   commit(latest);activeWeekId=id;refresh();select.value=id;open.disabled=false;show(item.name+' gespeichert.');
-  }catch(error){show('Wochenplan konnte nicht gespeichert werden. '+error.message)}
- };
- select.onchange=()=>{open.disabled=!select.value};
- open.onclick=()=>{
-  try{
-   const latest=readLibrary(),draftId=select.value.startsWith('draft:')?select.value.slice(6):null;
-   const item=draftId?latest.workingCopies?.[draftId]:latest.weeks.find(entry=>entry.id===select.value);
-   const restored=item&&validState(item.state);if(!restored||!Number.isInteger(item.sourceTemplate)||item.sourceTemplate<0||item.sourceTemplate>4)throw Error('Der Wochenplan ist ungültig.');
-   preserveWorkingCopy(latest);commit(latest);
-   persist();state=restored;weekCycle.selected=item.sourceTemplate;activeWeekId=draftId?null:item.id;history.length=0;lastEdit=null;
-   sync();persist();updateWeekButtons();refresh();select.value=draftId?'draft:'+draftId:item.id;show((item.name||'Arbeitskopie')+' geöffnet.');
-  }catch(error){show('Wochenplan konnte nicht geöffnet werden. '+error.message)}
+   document.activeElement?.blur();normalizeMenuNotes();persist();
+   const filename='Wochenplan-'+state.start+'.json';
+   const contents=JSON.stringify(state,null,2);
+   if(typeof window.showSaveFilePicker==='function'){
+    const handle=await window.showSaveFilePicker({suggestedName:filename,types:[{description:'Bearbeitbarer Wochenplan',accept:{'application/json':['.json']}}]});
+    let writable;
+    try{
+     writable=await handle.createWritable();await writable.write(contents);await writable.close();
+    }catch(error){if(writable)try{await writable.abort()}catch{}throw error}
+    show('Wochenplan als Datei gespeichert.');
+   }else{
+    const blob=new Blob([contents],{type:'application/json'});
+    const url=URL.createObjectURL(blob),link=document.createElement('a');
+    link.href=url;link.download=filename;document.body.append(link);link.click();link.remove();
+    setTimeout(()=>URL.revokeObjectURL(url),60000);
+    show('Datei zum Speichern übergeben. Die Ordnerauswahl richtet sich nach den Download-Einstellungen deines Browsers.');
+   }
+  }catch(error){
+   show(error.name==='AbortError'?'Speichern abgebrochen.':'Wochenplan konnte nicht gespeichert werden. '+error.message);
+  }finally{save.disabled=false}
  };
  update.onclick=()=>{
   const index=weekCycle.selected;
@@ -2432,13 +2431,12 @@ clone.style.transform='none';clone.style.margin='0';
   }catch(error){show('Vorlage konnte nicht aktualisiert werden. '+error.message)}
  };
  const exportButton=document.getElementById('exportMenuState');
- if(exportButton)exportButton.textContent='Arbeitskopie als Datei sichern';
+ if(exportButton)exportButton.remove();
  if(document.modelContext?.registerTool)try{Promise.resolve(document.modelContext.registerTool({name:'read_plan_library',description:'Read protected templates, saved weeks and the working copy for backup and verification.',inputSchema:{type:'object',properties:{},additionalProperties:false},annotations:{readOnlyHint:true},execute:()=>({library:readLibrary(),workingCopy:clone(state),selectedTemplate:weekCycle.selected,legacyBackup:JSON.parse(localStorage.getItem(backupKey)||'null')})})).catch(()=>{})}catch{}
 })();
 </script><style>
 .week-library{margin:12px 0;border-top:1px solid #514631;padding-top:10px}
 .week-library h3,.template-caption{font-size:14px;margin:8px 0}
-.week-library label{display:block;margin-top:12px}
-.week-library select,.week-library button{box-sizing:border-box;width:100%;margin:5px 0}
-@media print{.week-library,.template-caption{display:none!important}}
+.week-library button,.template-actions button{box-sizing:border-box;width:100%;margin:5px 0}
+@media print{.week-library,.template-caption,.template-actions{display:none!important}}
 </style>
